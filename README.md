@@ -1,4 +1,4 @@
-# DIY卡丁车固件 V17.03
+# DIY卡丁车固件 V20.03
 
 ## 项目简介
 
@@ -6,13 +6,11 @@
 
 本着开源精神，适配过的源码无偿分享，摆脱高价固件，只为让更多人以更低价格享受卡丁车的快乐。
 
-**开源卡丁车固件** — 基于hoverboard-firmware-hack-FOC-bbcar二次开发
-
 ---
 
-## 更新说明（V17.03 相比原版BBCAR）
+## 更新说明（V20.03 相比原版BBCAR）
 
-原版BBCAR固件仅支持基础的4种驾驶模式和双电位器控制。V17.03版本在保留原有功能的基础上，整合了PDF《DIY卡丁车固件功能说明_v17.03》中的全部扩展功能，并添加了完整的蓝牙APP通信协议。
+原版BBCAR固件仅支持基础的4种驾驶模式和双电位器控制。V20.03版本在保留原有功能的基础上，整合了PDF《DIY卡丁车固件功能说明_v17.03》中的全部扩展功能，并添加了完整的蓝牙APP通信协议。
 
 ### 新增功能清单
 
@@ -332,8 +330,6 @@ xxbcar-user/
 
 ## 联系我们
 
-- **项目主页**：[xxbcar](https://github.com/mouixong/xxbcar)
 - **GitHub**：[mouixong/xxbcar](https://github.com/mouixong/xxbcar)
-- **交流群**：GitHub Discussions
 
 欢迎提交Issue和Pull Request，共同完善本项目！
