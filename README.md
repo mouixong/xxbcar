@@ -1,89 +1,334 @@
-## hoverboard-firmware-hack-FOC - bobby car edition
+#  DIY卡丁车固件 V20.03
 
-This is a 4-wheel-drive-bobbycar-optimized version of the famous [hoverboard mainboard FOC firmware by EmanuelFeru](https://github.com/EFeru/hoverboard-firmware-hack-FOC). This an improved version of my [old bbcar firmware](https://github.com/larsmm/hoverboard-firmware-hack-bbcar).
+## 项目简介
 
-![bobbycar pic](https://raw.githubusercontent.com/larsmm/hoverboard-firmware-hack-bbcar/master/pic1.jpg)
+本项目基于开源项目 [hoverboard-firmware-hack-FOC-bbcar](https://github.com/larsmm/hoverboard-firmware-hack-FOC-bbcar) 进行二次开发，适配平衡车主板（STM32F103RCT6/GD32F103RCT6）改造卡丁车使用。
 
-### Features
-* Controlled by 2 potis on the steering wheel: 1. forward, 2. break or backward or turbo mode
-* 4 driving modes with different speeds, accelerations and features
-* Acceleration and breaking ramps, turbo ramp
-* Everything else is identical to: https://github.com/EFeru/hoverboard-firmware-hack-FOC
-* Backwards beep for safety :D (can be disabled in config.h)
+本着开源精神，适配过的源码无偿分享，摆脱高价固件，只为让更多人以更低价格享受卡丁车的快乐。
 
-### Safety features
-* Poti-out-of-range detection: controlled breaking and poweroff (fast di-de-di-de-di-de-di-de sound)
-* Low battery beep and poweroff (calibrate battery and use a good BMS!)
-* Motor fault detection
-* See [beep codes](https://github.com/EFeru/hoverboard-firmware-hack-FOC/wiki/Diagnostics)
 
-### Hardware
-* This firmware is compatible with [Single Mainboards with STM32F103RCT6 and GD32F103RCT6 chips](https://github.com/EFeru/hoverboard-firmware-hack-FOC/wiki/Firmware-Compatibility) only.
-* Schematic for [connecting potis](https://larsm.org/wp-content/uploads/2019/08/connecting-potis-v2.png) ([full guide](https://larsm.org/allrad-e-bobby-car/))
-* Use 1 power button and connect it to both boards
+---
 
-### Driving modes
-You can activate them by holding one or more of the potis while poweron. (km/h @ full 12s battery):
-* Mode 1 - Child: left poti, max speed ~3 km/h, very slow backwards, no turbo
-* Mode 2 - STVO: no poti, max speed ~<6 km/h (verify it), slow backwards, no turbo
-* Mode 3 - Fun: right poti, max speed ~12 km/h, no turbo
-* Mode 4 - Power: both potis, max speed ~22 km/h, with turbo ~39 km/h
+## 更新说明（V20.03 相比原版BBCAR）
 
-After poweron it beeps the welcome melody, then the mode in 1 to 4 fast beeps. Default is mode 2.
+原版BBCAR固件仅支持基础的4种驾驶模式和双电位器控制。V17.03版本在保留原有功能的基础上，整合了PDF《DIY卡丁车固件功能说明_v17.03》中的全部扩展功能，并添加了完整的蓝牙APP通信协议。
 
-### Turbo
-Field weakening is availible in mode 4 only. It can be activated above 80% of top speed only. Keep forward poti fully pressed. To activate turbo, fully press the backwards poti to get additional 40% more power. :) Please be very careful, this speed is dangarous!
+### 新增功能清单
 
-### Power and battery
-Peak power on full throttle+turbo on dry sand is around 50A = ~2300W at 12 lithium battery cells. The average current on normal road is much less. More power does not make much sense. The wheels are not able to get the power onto the ground. Cooling of the board is no problem, the wheels will get too hot before. You will get a range of ~20km out of a 10Ah 12s battery on mode 4 without turbo. Use a good BMS!!!
+| 序号 | 功能名称 | 说明 |
+|:---|:---|:---|
+| 1 | **蓝牙APP通信** | 自定义串口协议，支持APP实时控制与状态上报 |
+| 2 | **四种驾驶模式** | 卡丁车/轿车/遥控/原地掉头，APP一键切换 |
+| 3 | **自动相序校准** | APP一键触发，自动检测电机相序，无需人工操作 |
+| 4 | **定速巡航** | 必须连接遥控器才能开启，断连自动关闭保障安全 |
+| 5 | **遥控器+踏板双控** | 蓝牙APP与物理踏板并行控制 |
+| 6 | **智能空挡** | 停稳松踏板500ms后自动进入，车轮无阻力可自由推动 |
+| 7 | **电子手刹** | 车辆停稳+踏板全松时生效，踩踏板临时解除 |
+| 8 | **自动减速优化** | APP可调刹车力度（0-50），数值越大减速越快 |
+| 9 | **五档增压APP可调** | APP调节最大电流（1-40），数值越小极速越低 |
+| 10 | **差速转向** | 遥控模式专用，APP发送转向值实现左右轮差速 |
+| 11 | **倒挡切换** | 轿车/遥控模式支持倒挡按钮切换前进后退 |
+| 12 | **一线通仪表** | 发送速度/电压/状态标志到电瓶车一线通仪表 |
+| 13 | **大灯控制** | APP远程控制大灯开关 |
+| 14 | **蜂鸣器提示完善** | 加档/减档/手刹/巡航/大灯/校准/故障等提示音 |
 
-### Build and flash
-On new boards the chip is write-protected and must be [unlocked first](https://github.com/EFeru/hoverboard-firmware-hack-FOC/wiki/How-to-Unlock-MCU-flash).
-* Install Visual Studio Code
-* Install PlatformIO IDE within VSCode extension system
-* File --> open folder: hoverboard-firmware-hack-FOC-bbcar
-* Connect st-link v2 adapter to the board (do not connect 3.3V) [pic](https://github.com/EFeru/hoverboard-firmware-hack-FOC#hardware)
-* Connect battery or power supply to the board
-* Press and hold poweron button, press "Upload" button, wait for upload to finish, release poweron button
+---
 
-### Calibrate ADCs (potis)
-If the ADCs are not calibrated, the board will make a fast di-de-di-de-di-de-di-de sound and will poweroff emiedetly after poweron
-* Disconnect serial and st-link adapters
-* Make sure you calibrate both boards together!
-* Poweron and hold the button until a beep sound (after ~10s). After 1 sec you will hear another lower beep.
-* Now you have 20s to move both potis to min and max positions. Release in the mid position (which equals min position in this case). Wait for the 20s to end or short press poweron button.
+## 硬件兼容性
 
-### Fine tune ADCs (potis)
-* You have a dead zone at the start and end of the poti range.
-* Edit config.h ### DEFAULT SETTINGS ### section:
-* Make ADC_MARGIN smaller to make the dead zone smaller. It depends on the quality of your potis how small you can make it. If it is too small, the car sometimes starts driving slowly without pressing the potis or you will not reach max speed. I recommand to use hall-potis instead of mechanical ones.
-* Re-upload and recalibrate potis after every ADC_MARGIN-change.
+- **主控芯片**：STM32F103RCT6 或 GD32F103RCT6
+- **Flash**：256 KB
+- **RAM**：48 KB
+- **兼容主板**：单主板平衡车主板（详见 [Firmware-Compatibility](https://github.com/EFeru/hoverboard-firmware-hack-FOC/wiki/Firmware-Compatibility)）
 
-### Calibrate battery voltage
-* Edit config.h ### BATTERY ### section:
-* Connect usb-serial converter (GND, TX, RX, NOT 3.3V!) to the right sideboard cable. [pic](https://github.com/EFeru/hoverboard-firmware-hack-FOC#hardware)
-* Press "Serial Monitor" button to get debug feedback from the board at 115200.
-* Connect a known voltage to the board, verify with multimeter. For 45.00V, write 4500 to BAT_CALIB_REAL_VOLTAGE. If board powers off emiedetly, either the ADCs are not calibrated (calibrate them first) or undervoltage protection jumps in (use higher voltage up to 51V)
-* Write BatADC from serial output to BAT_CALIB_ADC in config.h
-* Make sure BAT_CELLS matches your cell count
-* Re-upload
+---
 
-### Switch to FOC_CTRL on the go
-* press the power button until beep. release the button and immediately press again for >= 2 sek. beep-beep indicates the mode switch to FOC. To switch back to SIN, poweroff and poweron again. Field weakening is not working very well in FOC mode. It is significantly slower.
+## 引脚定义
 
-### Trouble shooting
-* Sometimes 1 board is on and the other off. This is a rare case. The easiest way to poweroff both boards is to press a poti half way and press the power button. The board which is trying to poweron will detect this as an invalid state and poweroff.
-* The current and max speed calibration function initiated by pressing poweron button in a special way is disabled in thes firmware.
-* After poweron the board immediately powers off without an additional beep code: This happens if potis are in valid range but not in a valid position for detecting driving mode: max and min positions are valid, in between is invald. Use serial debug to get more info.
+### 1. 电机驱动引脚（6路PWM）
 
-### ToDo
-* At the moment it runs on sinus mode, not foc. This is because in older versions field weakening was not working on foc. Have to try again.
+#### 左轮电机（TIM8）
+| 功能 | 引脚 | 说明 |
+|:---|:---|:---|
+| U相高侧 | **PC6** | 左轮U相上桥臂MOS |
+| U相低侧 | **PA7** | 左轮U相下桥臂MOS |
+| V相高侧 | **PC7** | 左轮V相上桥臂MOS |
+| V相低侧 | **PB0** | 左轮V相下桥臂MOS |
+| W相高侧 | **PC8** | 左轮W相上桥臂MOS |
+| W相低侧 | **PB1** | 左轮W相下桥臂MOS |
 
-### FAQ
-* Why SIN instead of FOC? At the time when I created the code, FOC was not working properly, so I used SIN. ~2 years later I tried FOC again. It was working but driving behaviour was worse.
-* Can I use sideboards, other inputs like nunchuck, serial, my own mixing, ...? No, it is not possible. I heavily modified the structure of the code. I even skipped the orgiginal mixing and made my own one.
+#### 右轮电机（TIM1）
+| 功能 | 引脚 | 说明 |
+|:---|:---|:---|
+| U相高侧 | **PA8** | 右轮U相上桥臂MOS |
+| U相低侧 | **PB13** | 右轮U相下桥臂MOS |
+| V相高侧 | **PA9** | 右轮V相上桥臂MOS |
+| V相低侧 | **PB14** | 右轮V相下桥臂MOS |
+| W相高侧 | **PA10** | 右轮W相上桥臂MOS |
+| W相低侧 | **PB15** | 右轮W相下桥臂MOS |
 
-### More info
-* https://github.com/EFeru/hoverboard-firmware-hack-FOC
-* https://larsm.org/allrad-e-bobby-car/
-* https://figch.de/index.php?nav=bobbycar
+### 2. 霍尔传感器引脚
+
+| 功能 | 引脚 | 说明 |
+|:---|:---|:---|
+| 左轮霍尔U | **PA0** | 左轮霍尔信号U相 |
+| 左轮霍尔V | **PA1** | 左轮霍尔信号V相 |
+| 左轮霍尔W | **PA2** | 左轮霍尔信号W相 |
+| 右轮霍尔U | **PB6** | 右轮霍尔信号U相 |
+| 右轮霍尔V | **PB7** | 右轮霍尔信号V相 |
+| 右轮霍尔W | **PB8** | 右轮霍尔信号W相 |
+
+### 3. 电流采样引脚（ADC）
+
+| 功能 | 引脚 | ADC通道 |
+|:---|:---|:---|
+| 左母线电流 | **PC3** | ADC1_CH13 |
+| 左U相电流 | **PA4** | ADC1_CH4 |
+| 左V相电流 | **PC4** | ADC1_CH14 |
+| 右母线电流 | **PA6** | ADC2_CH6 |
+| 右U相电流 | **PA3** | ADC2_CH3 |
+| 右V相电流 | **PC5** | ADC2_CH15 |
+
+### 4. 油门/刹车电位器引脚（BBCAR模式）
+
+| 功能 | 引脚 | ADC通道 | 接线方法 |
+|:---|:---|:---|:---|
+| **油门电位器** | **PA5** | ADC2_CH5 | 中间脚接PA5，两边接3.3V和GND |
+| **刹车电位器** | **PC2** | ADC2_CH12 | 中间脚接PC2，两边接3.3V和GND |
+
+> **警告**：电位器供电必须使用主板上的 **3.3V**，接5V会烧毁ADC引脚！
+
+### 5. 电源与状态引脚
+
+| 功能 | 板型0引脚 | 板型1引脚 | 说明 |
+|:---|:---|:---|:---|
+| 电池电压检测 | **PC1** | **PA1** | 通过分压电阻检测电池电压 |
+| 芯片温度 | 内部 | 内部 | STM32内部温度传感器 |
+| LED指示灯 | **PC9** | **PC9** | 状态LED |
+| 蜂鸣器 | **PC12** | **PC13** | 有源蜂鸣器驱动 |
+| 电源按钮 | **PC0** | **PB9** | 开机/关机按钮 |
+| 关机检测 | **PB9** | **PC15** | 检测电源状态 |
+| 充电检测 | **PB4** | **PA11** | 检测充电器是否插入 |
+
+### 6. 串口引脚
+
+| 功能 | 引脚 | 说明 |
+|:---|:---|:---|
+| USART2_TX | **PA2** | 左侧传感器板/调试输出 |
+| USART2_RX | **PA3** | 左侧传感器板/调试输入 |
+| USART3_TX | **PB10** | 右侧传感器板/蓝牙模块/一线通仪表 |
+| USART3_RX | **PB11** | 右侧传感器板/蓝牙模块 |
+
+### 7. 新增扩展功能引脚
+
+| 功能 | 引脚 | 说明 |
+|:---|:---|:---|
+| 大灯控制 | **PC10** | GPIO推挽输出，驱动MOS管或继电器 |
+
+---
+
+## 接线方法
+
+### 1. 电机接线
+
+将左右轮电机的三相线分别接到对应的高低侧MOS桥臂：
+- 左轮：U相 → PC6/PA7，V相 → PC7/PB0，W相 → PC8/PB1
+- 右轮：U相 → PA8/PB13，V相 → PA9/PB14，W相 → PA10/PB15
+
+### 2. 霍尔传感器接线
+
+霍尔传感器通常为5V供电，输出信号接：
+- 左轮霍尔U/V/W → PA0/PA1/PA2
+- 右轮霍尔U/V/W → PB6/PB7/PB8
+
+### 3. 油门/刹车电位器接线
+
+使用10KΩ线性电位器（推荐霍尔电位器）：
+
+```
+电位器1（油门）          电位器2（刹车）
+   ┌─────┐                  ┌─────┐
+   │  1  │──3.3V            │  1  │──3.3V
+   │  2  │──PA5             │  2  │──PC2
+   │  3  │──GND             │  3  │──GND
+   └─────┘                  └─────┘
+```
+
+### 4. 蓝牙模块接线
+
+支持HC-05/HC-06/JDY-31等蓝牙串口模块：
+
+| 蓝牙模块 | 主板 |
+|:---|:---|
+| VCC | 5V 或 3.3V（根据模块电压） |
+| GND | GND |
+| TXD | PB11（USART3_RX） |
+| RXD | PB10（USART3_TX） |
+
+> **注意**：蓝牙模块和一线通仪表共用USART3，如需同时使用，建议将一线通改接USART2（PA2/PA3）。
+
+### 5. 大灯接线
+
+PC10输出电流有限，需外接MOS管或继电器驱动大灯：
+
+```
+PC10 ──► 电阻 ──► NPN/MOS管栅极 ──► 大灯 ──► 电源
+```
+
+### 6. 一线通仪表接线（可选）
+
+| 一线通仪表 | 主板 |
+|:---|:---|
+| 信号线 | PB10（USART3_TX） |
+| GND | GND |
+
+> 一线通波特率通常为1200，与调试串口115200不同，如需同时使用需分时切换或另接串口。
+
+---
+
+## 编译与烧录
+
+### 环境准备
+
+**方法一：PlatformIO（推荐）**
+1. 安装 [Visual Studio Code](https://code.visualstudio.com/)
+2. 安装 PlatformIO IDE 插件
+3. 用VSCode打开本项目文件夹
+
+**方法二：Makefile**
+```bash
+# 安装ARM交叉编译器（Ubuntu/Debian）
+sudo apt-get install gcc-arm-none-eabi
+
+# 编译
+cd xxbcar-user
+make VARIANT=VARIANT_BBCAR
+```
+
+### 编译参数
+
+本项目使用 `VARIANT_BBCAR` 变体编译，已内置4种驾驶模式：
+- **Mode 1（儿童档）**：左电位器/刹车开机，最高约3km/h
+- **Mode 2（标准档）**：不踩踏板开机，最高约6km/h
+- **Mode 3（运动档）**：右电位器/油门开机，最高约12km/h
+- **Mode 4（涡轮档）**：双电位器/双踏板开机，最高约22km/h，涡轮约39km/h
+
+### 烧录方法
+
+1. 连接ST-Link V2调试器到主板SWD接口（GND、SWDIO、SWCLK，**不要接3.3V**）
+2. 连接电池或电源到主板
+3. 按住电源开机按钮
+4. 点击PlatformIO的"Upload"或运行 `make flash`
+5. 等待烧录完成后松开电源按钮
+
+> **新主板注意**：出厂时Flash默认写保护，需先用ST-Link Utility解锁（[解锁教程](https://github.com/EFeru/hoverboard-firmware-hack-FOC/wiki/How-to-Unlock-MCU-flash)）。
+
+---
+
+## 首次使用配置
+
+### 1. 校准ADC（电位器）
+
+如果开机后听到快速的"di-de-di-de"声并立即关机，说明ADC未校准：
+1. 断开ST-Link和串口
+2. 确保两个电位器一起校准
+3. 开机后长按电源按钮约10秒直到听到"嘀"声
+4. 1秒后听到另一声较低提示音
+5. 在20秒内将两个电位器分别打到最小和最大位置，最后回到中间
+6. 等待20秒结束或短按电源按钮完成校准
+
+### 2. 校准电池电压
+
+1. 用USB转串口模块连接主板右侧传感器板接口（GND、TX、RX，**不要接3.3V**）
+2. 打开串口监视器，波特率115200
+3. 用万用表测量实际电池电压，例如45.00V
+4. 在config.h中设置 `BAT_CALIB_REAL_VOLTAGE = 4500`
+5. 查看串口输出的 `BatADC` 值，写入 `BAT_CALIB_ADC`
+6. 确认 `BAT_CELLS` 与实际电芯数量一致
+7. 重新编译烧录
+
+---
+
+## 蓝牙APP通信协议
+
+### 帧格式
+
+```
++--------+--------+--------+--------+--------+-----+--------+
+| 帧头1  | 帧头2  | 命令   | 长度   | 数据   | ... | 校验和 |
+| 0xAB   | 0xCD   | 1字节  | 1字节  | N字节  |     | 1字节  |
++--------+--------+--------+--------+--------+-----+--------+
+```
+
+- **校验和**：帧头+命令+长度+数据的累加和（取低8位）
+
+### APP下发命令
+
+| 命令 | 值 | 数据 | 说明 |
+|:---|:---|:---|:---|
+| 设置模式 | 0x01 | 1字节（0-3） | 0=卡丁车, 1=轿车, 2=遥控, 3=原地掉头 |
+| 设置速度 | 0x02 | 2字节 | 定速巡航或遥控目标速度 |
+| 设置转向 | 0x03 | 2字节 | 遥控模式差速转向值（-1000~1000） |
+| 设置刹车 | 0x04 | 1字节 | 自动刹车力度（0-50） |
+| 设置增压 | 0x05 | 1字节 | 最大电流（1-40） |
+| 设置手刹 | 0x06 | 1字节 | 1=开启, 0=关闭 |
+| 设置大灯 | 0x07 | 1字节 | 1=开, 0=关, 2=切换 |
+| 请求校准 | 0x08 | 无 | 启动自动相序校准 |
+| 请求状态 | 0x09 | 无 | 立即上报当前状态 |
+| 设置档位 | 0x0A | 1字节 | 1-4档 |
+| 设置倒挡 | 0x0B | 1字节 | 1=倒挡, 0=前进 |
+
+### 主板上报状态
+
+| 类型 | 值 | 数据 | 说明 |
+|:---|:---|:---|:---|
+| 状态上报 | 0x80 | 16字节 | 速度/电压/温度/电流/模式/档位/状态标志 |
+| 校准开始 | 0x81 | 无 | 校准开始确认 |
+| 校准完成 | 0x82 | 无 | 校准完成确认 |
+| 蜂鸣器事件 | 0x83 | 1字节 | 蜂鸣器事件类型 |
+| 故障事件 | 0x84 | 1字节 | 故障码 |
+
+---
+
+## 安全提示
+
+1. **电位器必须接3.3V**，切勿接5V
+2. **Mode 4涡轮模式很危险**，最高速度约39km/h，请务必小心
+3. **Field Weakening（磁场削弱）**仅在Mode 4可用，80%以上速度时踩下刹车踏板触发
+4. **使用优质BMS**，低电量时固件会自动关机保护电池
+5. **确保电机相序正确**，否则电机会剧烈抖动甚至烧毁
+6. **首次烧录前解锁Flash**，新主板默认写保护
+
+---
+
+## 文件结构
+
+```
+xxbcar-user/
+├── Inc/
+│   ├── config.h              # 配置文件（驾驶模式参数、电池设置等）
+│   ├── defines.h             # 引脚定义和宏
+│   ├── util.h                # 工具函数声明
+│   └── xxbcar_features.h     # 【新增】扩展功能头文件
+├── Src/
+│   ├── main.c                # 主程序
+│   ├── util.c                # 工具函数实现（蜂鸣器、ADC校准等）
+│   └── xxbcar_features.c     # 【新增】扩展功能实现
+├── build/
+│   ├── hover.hex             # 编译生成的烧录文件
+│   └── hover.bin
+├── Makefile                  # Makefile编译脚本
+└── platformio.ini            # PlatformIO配置文件
+```
+
+---
+
+## 开源协议
+
+本项目基于 [hoverboard-firmware-hack-FOC](https://github.com/EFeru/hoverboard-firmware-hack-FOC) 和 [hoverboard-firmware-hack-FOC-bbcar](https://github.com/larsmm/hoverboard-firmware-hack-FOC-bbcar) 开发，遵循 GPL v3 开源协议。
+
+---
+
+## 联系我们
+- **GitHub**：[mouixong/xxbcar](https://github.com/mouixong/xxbcar)
+欢迎提交Issue和Pull Request，共同完善本项目！
