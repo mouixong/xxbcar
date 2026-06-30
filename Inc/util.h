@@ -79,6 +79,7 @@ void beepCount(uint8_t cnt, uint8_t freq, uint8_t pattern);
 void beepLong(uint8_t freq);
 void beepShort(uint8_t freq);
 void beepShortMany(uint8_t cnt, int8_t dir);
+void beepShortMany2(uint8_t cnt);
 void calcAvgSpeed(void);
 void adcCalibLim(void);
 void updateCurSpdLim(void);

@@ -20,7 +20,9 @@
   //#define VARIANT_HOVERBOARD  // Variant for HOVERBOARD build
   //#define VARIANT_TRANSPOTTER // Variant for TRANSPOTTER build https://github.com/NiklasFauth/hoverboard-firmware-hack/wiki/Build-Instruction:-TranspOtter https://hackaday.io/project/161891-transpotter-ng
   //#define VARIANT_SKATEBOARD  // Variant for SKATEBOARD build
-  #define VARIANT_BBCAR       // Variant for small Toy-Car with steering wheel with 4 drive modes https://larsm.org/allrad-e-bobby-car/
+  #ifndef VARIANT_BBCAR
+  #define VARIANT_BBCAR       /* 小型玩具车BBCAR变体：带方向盘的4种驾驶模式卡丁车 */
+  #endif
 #endif
 // ########################### END OF VARIANT SELECTION ############################
 
@@ -281,33 +283,38 @@
 
 
 #ifdef VARIANT_BBCAR
-  #define CONTROL_ADC           0     
-  #define PRI_INPUT1            1, 0, 0, 4095, 0      
-  #define PRI_INPUT2            1, 0, 0, 4095, 0      
-  #define FLASH_WRITE_KEY     0x1001    
-  #define DEBUG_SERIAL_USART3           
+  /* ---------- BBCAR基础配置 ---------- */
+  #define CONTROL_ADC           0       /* ADC输入控制，优先级0 */
+  #define PRI_INPUT1            1, 0, 0, 4095, 0       /* 输入1：油门踏板，普通电位器 */
+  #define PRI_INPUT2            1, 0, 0, 4095, 0       /* 输入2：刹车踏板，普通电位器 */
+  #define FLASH_WRITE_KEY     0x1001    /* Flash写入校验密钥 */
+  #define DEBUG_SERIAL_USART3             /* 右侧传感器板串口用于调试输出 */
 
-  #define MAX_SPEED_FORWARDS_M1 130  
-  #define ACC_FORWARDS_M1 0.8
-  #define MAX_SPEED_BACKWARDS_M1 90
-  #define ACC_BACKWARDS_M1 0.8
+  /* 四种驾驶模式的最高速度和加速度配置 */
+  #define MAX_SPEED_FORWARDS_M1 130     /* 模式1（儿童档）前进最高速度 */
+  #define ACC_FORWARDS_M1 0.8           /* 模式1前进加速度 */
+  #define MAX_SPEED_BACKWARDS_M1 90     /* 模式1后退最高速度 */
+  #define ACC_BACKWARDS_M1 0.8          /* 模式1后退加速度 */
 
-  #define MAX_SPEED_FORWARDS_M2 280
-  #define ACC_FORWARDS_M2 0.8
-  #define MAX_SPEED_BACKWARDS_M2 190
-  #define ACC_BACKWARDS_M2 0.8
+  #define MAX_SPEED_FORWARDS_M2 280     /* 模式2（标准档）前进最高速度 */
+  #define ACC_FORWARDS_M2 0.8           /* 模式2前进加速度 */
+  #define MAX_SPEED_BACKWARDS_M2 190    /* 模式2后退最高速度 */
+  #define ACC_BACKWARDS_M2 0.8          /* 模式2后退加速度 */
 
-  #define MAX_SPEED_FORWARDS_M3 540
-  #define ACC_FORWARDS_M3 0.8
-  #define MAX_SPEED_BACKWARDS_M3 240
-  #define ACC_BACKWARDS_M3 0.8
+  #define MAX_SPEED_FORWARDS_M3 540     /* 模式3（运动档）前进最高速度 */
+  #define ACC_FORWARDS_M3 0.8           /* 模式3前进加速度 */
+  #define MAX_SPEED_BACKWARDS_M3 240    /* 模式3后退最高速度 */
+  #define ACC_BACKWARDS_M3 0.8          /* 模式3后退加速度 */
 
-  #define MAX_SPEED_FORWARDS_M4 1000  
-  #define ACC_FORWARDS_M4 0.8
-  #define MAX_SPEED_BACKWARDS_M4 300
-  #define ACC_BACKWARDS_M4 0.8
+  #define MAX_SPEED_FORWARDS_M4 1000    /* 模式4（涡轮档）前进最高速度 */
+  #define ACC_FORWARDS_M4 0.8           /* 模式4前进加速度 */
+  #define MAX_SPEED_BACKWARDS_M4 300    /* 模式4后退最高速度 */
+  #define ACC_BACKWARDS_M4 0.8          /* 模式4后退加速度 */
 
-  #define DEBUG_SERIAL_USART3       
+  /* ---------- DIY卡丁车扩展功能配置 ---------- */
+  #define XXBCAR_FEATURES_ENABLE        /* 启用V17.03扩展功能模块 */
+  #define BLE_SERIAL_BAUDRATE   115200  /* 蓝牙串口波特率（与调试串口一致） */
+
 #endif
 
 

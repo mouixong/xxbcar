@@ -1,25 +1,21 @@
 /**
-  * This file is part of the hoverboard-firmware-hack project.
+  * 本文件是 hoverboard-firmware-hack 项目的一部分。
   *
-  * Copyright (C) 2020-2021 Emanuel FERU <aerdronix@gmail.com>
+  * 版权所有 (C) 2020-2021 Emanuel FERU <aerdronix@gmail.com>
   *
-  * This program is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation, either version 3 of the License, or
-  * (at your option) any later version.
+  * 本程序是自由软件：您可以根据自由软件基金会发布的 GNU 通用公共许可证的条款
+  * 重新分发和/或修改它，无论是许可证的第 3 版，还是（由您选择）任何更高版本。
   *
-  * This program is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU General Public License for more details.
+  * 分发本程序是希望它有用，但没有任何担保；甚至没有对适销性或特定用途适用性的默示担保。
+  * 更多细节请参阅 GNU 通用公共许可证。
   *
-  * You should have received a copy of the GNU General Public License
-  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  * 您应该已经收到一份 GNU 通用公共许可证的副本。
+  * 如果没有，请参见 <http://www.gnu.org/licenses/>。
 */
 
-// Includes
+// 头文件包含
 #include <stdio.h>
-#include <stdlib.h> // for abs()
+#include <stdlib.h> // 用于 abs()
 #include <string.h>
 #include "stm32f1xx_hal.h"
 #include "defines.h"
@@ -35,10 +31,10 @@
 #include "hd44780.h"
 #endif
 
-/* =========================== Variable Definitions =========================== */
+/* =========================== 变量定义 =========================== */
 
 //------------------------------------------------------------------------
-// Global variables set externally
+// 外部设置的全局变量
 //------------------------------------------------------------------------
 extern volatile adc_buf_t adc_buffer;
 extern I2C_HandleTypeDef hi2c2;
@@ -47,15 +43,15 @@ extern UART_HandleTypeDef huart3;
 
 extern int16_t batVoltage;
 extern uint8_t backwardDrive;
-extern uint8_t buzzerCount;             // global variable for the buzzer counts. can be 1, 2, 3, 4, 5, 6, 7...
-extern uint8_t buzzerFreq;              // global variable for the buzzer pitch. can be 1, 2, 3, 4, 5, 6, 7...
-extern uint8_t buzzerPattern;           // global variable for the buzzer pattern. can be 1, 2, 3, 4, 5, 6, 7...
+extern uint8_t buzzerCount;             // 蜂鸣器计数全局变量，可为 1, 2, 3, 4, 5, 6, 7...
+extern uint8_t buzzerFreq;              // 蜂鸣器音调全局变量，可为 1, 2, 3, 4, 5, 6, 7...
+extern uint8_t buzzerPattern;           // 蜂鸣器模式全局变量，可为 1, 2, 3, 4, 5, 6, 7...
 
-extern uint8_t enable;                  // global variable for motor enable
+extern uint8_t enable;                  // 电机使能全局变量
 
 extern uint8_t nunchuk_data[6];
-extern volatile uint32_t timeoutCntGen; // global counter for general timeout counter
-extern volatile uint8_t  timeoutFlgGen; // global flag for general timeout counter
+extern volatile uint32_t timeoutCntGen; // 通用超时计数器
+extern volatile uint8_t  timeoutFlgGen; // 通用超时标志
 extern volatile uint32_t main_loop_counter;
 
 #if defined(CONTROL_PPM_LEFT) || defined(CONTROL_PPM_RIGHT)
@@ -74,24 +70,24 @@ extern volatile uint16_t pwm_captured_ch2_value;
 
 
 //------------------------------------------------------------------------
-// Global variables set here in util.c
+// 在 util.c 中设置的全局变量
 //------------------------------------------------------------------------
-// Matlab defines - from auto-code generation
+// Matlab 定义 - 来自自动生成代码
 //---------------
-RT_MODEL rtM_Left_;                     /* Real-time model */
-RT_MODEL rtM_Right_;                    /* Real-time model */
+RT_MODEL rtM_Left_;                     /* 实时模型 */
+RT_MODEL rtM_Right_;                    /* 实时模型 */
 RT_MODEL *const rtM_Left  = &rtM_Left_;
 RT_MODEL *const rtM_Right = &rtM_Right_;
 
-extern P rtP_Left;                      /* Block parameters (auto storage) */
-DW       rtDW_Left;                     /* Observable states */
-ExtU     rtU_Left;                      /* External inputs */
-ExtY     rtY_Left;                      /* External outputs */
+extern P rtP_Left;                      /* 模块参数（自动存储） */
+DW       rtDW_Left;                     /* 可观测状态 */
+ExtU     rtU_Left;                      /* 外部输入 */
+ExtY     rtY_Left;                      /* 外部输出 */
 
-P        rtP_Right;                     /* Block parameters (auto storage) */
-DW       rtDW_Right;                    /* Observable states */
-ExtU     rtU_Right;                     /* External inputs */
-ExtY     rtY_Right;                     /* External outputs */
+P        rtP_Right;                     /* 模块参数（自动存储） */
+DW       rtDW_Right;                    /* 可观测状态 */
+ExtU     rtU_Right;                     /* 外部输入 */
+ExtY     rtY_Right;                     /* 外部输出 */
 //---------------
 
 uint8_t  inIdx      = 0;
@@ -104,13 +100,13 @@ InputStruct input1[INPUTS_NR] = { {0, 0, 0, PRI_INPUT1} };
 InputStruct input2[INPUTS_NR] = { {0, 0, 0, PRI_INPUT2} };
 #endif
 
-int16_t  speedAvg;                      // average measured speed
-int16_t  speedAvgAbs;                   // average measured speed in absolute
-uint8_t  timeoutFlgADC    = 0;          // Timeout Flag for ADC Protection:    0 = OK, 1 = Problem detected (line disconnected or wrong ADC data)
-uint8_t  timeoutFlgSerial = 0;          // Timeout Flag for Rx Serial command: 0 = OK, 1 = Problem detected (line disconnected or wrong Rx data)
+int16_t  speedAvg;                      // 平均测量速度
+int16_t  speedAvgAbs;                   // 平均测量速度绝对值
+uint8_t  timeoutFlgADC    = 0;          // ADC 保护超时标志：0 = 正常，1 = 检测到问题（线路断开或 ADC 数据错误）
+uint8_t  timeoutFlgSerial = 0;          // 串口接收命令超时标志：0 = 正常，1 = 检测到问题（线路断开或接收数据错误）
 
 uint8_t  ctrlModReqRaw = CTRL_MOD_REQ;
-uint8_t  ctrlModReq    = CTRL_MOD_REQ;  // Final control mode request 
+uint8_t  ctrlModReq    = CTRL_MOD_REQ;  // 最终控制模式请求 
 
 #if defined(DEBUG_I2C_LCD) || defined(SUPPORT_LCD)
 LCD_PCF8574_HandleTypeDef lcd;
@@ -118,22 +114,22 @@ LCD_PCF8574_HandleTypeDef lcd;
 
 #ifdef VARIANT_TRANSPOTTER
 float    setDistance;
-uint16_t VirtAddVarTab[NB_OF_VAR] = {1337};       // Virtual address defined by the user: 0xFFFF value is prohibited
+uint16_t VirtAddVarTab[NB_OF_VAR] = {1337};       // 用户定义的虚拟地址：禁止使用 0xFFFF 值
 static   uint16_t saveValue       = 0;
 static   uint8_t  saveValue_valid = 0;
 #elif !defined(VARIANT_HOVERBOARD) && !defined(VARIANT_TRANSPOTTER)
 uint16_t VirtAddVarTab[NB_OF_VAR] = {1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009,
                                      1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018};
 #else
-uint16_t VirtAddVarTab[NB_OF_VAR] = {1000};       // Dummy virtual address to avoid warnings
+uint16_t VirtAddVarTab[NB_OF_VAR] = {1000};       // 虚拟地址占位，用于避免编译警告
 #endif
 
 
 //------------------------------------------------------------------------
-// Local variables
+// 局部变量
 //------------------------------------------------------------------------
-static int16_t INPUT_MAX;             // [-] Input target maximum limitation
-static int16_t INPUT_MIN;             // [-] Input target minimum limitation
+static int16_t INPUT_MAX;             // [-] 输入目标最大值限制
+static int16_t INPUT_MIN;             // [-] 输入目标最小值限制
 
 
 #if !defined(VARIANT_HOVERBOARD) && !defined(VARIANT_TRANSPOTTER)
@@ -142,16 +138,16 @@ static int16_t INPUT_MIN;             // [-] Input target minimum limitation
 #endif
 
 #if defined(CONTROL_ADC)
-static uint16_t timeoutCntADC = ADC_PROTECT_TIMEOUT;  // Timeout counter for ADC Protection
+static uint16_t timeoutCntADC = ADC_PROTECT_TIMEOUT;  // ADC 保护超时计数器
 #endif
 
 #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
-static uint8_t  rx_buffer_L[SERIAL_BUFFER_SIZE];      // USART Rx DMA circular buffer
+static uint8_t  rx_buffer_L[SERIAL_BUFFER_SIZE];      // USART 接收 DMA 循环缓冲区
 static uint32_t rx_buffer_L_len = ARRAY_LEN(rx_buffer_L);
 #endif
 #if defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
-static uint16_t timeoutCntSerial_L = SERIAL_TIMEOUT;  // Timeout counter for Rx Serial command
-static uint8_t  timeoutFlgSerial_L = 0;               // Timeout Flag for Rx Serial command: 0 = OK, 1 = Problem detected (line disconnected or wrong Rx data)
+static uint16_t timeoutCntSerial_L = SERIAL_TIMEOUT;  // 串口接收命令超时计数器
+static uint8_t  timeoutFlgSerial_L = 0;               // 串口接收命令超时标志：0 = 正常，1 = 检测到问题（线路断开或接收数据错误）
 #endif
 #if defined(SIDEBOARD_SERIAL_USART2)
 SerialSideboard Sideboard_L;
@@ -160,12 +156,12 @@ static uint32_t Sideboard_L_len = sizeof(Sideboard_L);
 #endif
 
 #if defined(DEBUG_SERIAL_USART3) || defined(CONTROL_SERIAL_USART3) || defined(SIDEBOARD_SERIAL_USART3)
-static uint8_t  rx_buffer_R[SERIAL_BUFFER_SIZE];      // USART Rx DMA circular buffer
+static uint8_t  rx_buffer_R[SERIAL_BUFFER_SIZE];      // USART 接收 DMA 循环缓冲区
 static uint32_t rx_buffer_R_len = ARRAY_LEN(rx_buffer_R);
 #endif
 #if defined(CONTROL_SERIAL_USART3) || defined(SIDEBOARD_SERIAL_USART3)
-static uint16_t timeoutCntSerial_R = SERIAL_TIMEOUT;  // Timeout counter for Rx Serial command
-static uint8_t  timeoutFlgSerial_R = 0;               // Timeout Flag for Rx Serial command: 0 = OK, 1 = Problem detected (line disconnected or wrong Rx data)
+static uint16_t timeoutCntSerial_R = SERIAL_TIMEOUT;  // 串口接收命令超时计数器
+static uint8_t  timeoutFlgSerial_R = 0;               // 串口接收命令超时标志：0 = 正常，1 = 检测到问题（线路断开或接收数据错误）
 #endif
 #if defined(SIDEBOARD_SERIAL_USART3)
 SerialSideboard Sideboard_R;
@@ -192,8 +188,8 @@ static uint32_t commandR_len = sizeof(commandR);
 #endif
 
 #if defined(SUPPORT_BUTTONS) || defined(SUPPORT_BUTTONS_LEFT) || defined(SUPPORT_BUTTONS_RIGHT)
-static uint8_t button1;                 // Blue
-static uint8_t button2;                 // Green
+static uint8_t button1;                 // 蓝色按钮
+static uint8_t button2;                 // 绿色按钮
 #endif
 
 #ifdef VARIANT_HOVERCAR
@@ -205,8 +201,8 @@ static uint8_t cruiseCtrlAcv = 0;
 static uint8_t standstillAcv = 0;
 #endif
 
-/* =========================== Retargeting printf =========================== */
-/* retarget the C library printf function to the USART */
+/* =========================== printf 重定向 =========================== */
+/* 将 C 库 printf 函数重定向到 USART */
 #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART3)
   #ifdef __GNUC__
     #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
@@ -232,12 +228,12 @@ static uint8_t standstillAcv = 0;
 #endif
 
  
-/* =========================== Initialization Functions =========================== */
+/* =========================== 初始化函数 =========================== */
 
 void BLDC_Init(void) {
-  /* Set BLDC controller parameters */ 
-  rtP_Left.b_angleMeasEna       = 0;            // Motor angle input: 0 = estimated angle, 1 = measured angle (e.g. if encoder is available)
-  rtP_Left.z_selPhaCurMeasABC   = 0;            // Left motor measured current phases {Green, Blue} = {iA, iB} -> do NOT change
+  /* 设置 BLDC 控制器参数 */ 
+  rtP_Left.b_angleMeasEna       = 0;            // 电机角度输入：0 = 估算角度，1 = 测量角度（例如有编码器时）
+  rtP_Left.z_selPhaCurMeasABC   = 0;            // 左侧电机测量电流相位 {Green, Blue} = {iA, iB} -> 请勿更改
   rtP_Left.z_ctrlTypSel         = CTRL_TYP_SEL;
   rtP_Left.b_diagEna            = DIAG_ENA;
   rtP_Left.i_max                = (I_MOT_MAX * A2BIT_CONV) << 4;        // fixdt(1,16,4)
@@ -248,27 +244,27 @@ void BLDC_Init(void) {
   rtP_Left.r_fieldWeakHi        = FIELD_WEAK_HI << 4;                   // fixdt(1,16,4)
   rtP_Left.r_fieldWeakLo        = FIELD_WEAK_LO << 4;                   // fixdt(1,16,4)
 
-  rtP_Right                     = rtP_Left;     // Copy the Left motor parameters to the Right motor parameters
-  rtP_Right.z_selPhaCurMeasABC  = 1;            // Right motor measured current phases {Blue, Yellow} = {iB, iC} -> do NOT change
+  rtP_Right                     = rtP_Left;     // 将左侧电机参数复制到右侧电机参数
+  rtP_Right.z_selPhaCurMeasABC  = 1;            // 右侧电机测量电流相位 {Blue, Yellow} = {iB, iC} -> 请勿更改
 
-  /* Pack LEFT motor data into RTM */
+  /* 将左侧电机数据打包到 RTM */
   rtM_Left->defaultParam        = &rtP_Left;
   rtM_Left->dwork               = &rtDW_Left;
   rtM_Left->inputs              = &rtU_Left;
   rtM_Left->outputs             = &rtY_Left;
 
-  /* Pack RIGHT motor data into RTM */
+  /* 将右侧电机数据打包到 RTM */
   rtM_Right->defaultParam       = &rtP_Right;
   rtM_Right->dwork              = &rtDW_Right;
   rtM_Right->inputs             = &rtU_Right;
   rtM_Right->outputs            = &rtY_Right;
 
-  /* Initialize BLDC controllers */
+  /* 初始化 BLDC 控制器 */
   BLDC_controller_initialize(rtM_Left);
   BLDC_controller_initialize(rtM_Right);
 }
 
-void Input_Lim_Init(void) {     // Input Limitations - ! Do NOT touch !
+void Input_Lim_Init(void) {     // 输入限制 - 请勿修改！
   if (rtP_Left.b_fieldWeakEna || rtP_Right.b_fieldWeakEna) {
     INPUT_MAX = MAX( 1000, FIELD_WEAK_HI);
     INPUT_MIN = MIN(-1000,-FIELD_WEAK_HI);
@@ -305,7 +301,7 @@ void Input_Init(void) {
   #if !defined(VARIANT_HOVERBOARD) && !defined(VARIANT_TRANSPOTTER)
     uint16_t writeCheck, readVal;
     HAL_FLASH_Unlock();
-    EE_Init();            /* EEPROM Init */
+    EE_Init();            /* EEPROM 初始化 */
     EE_ReadVariable(VirtAddVarTab[0], &writeCheck);
     if (writeCheck == FLASH_WRITE_KEY) {
       #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART3)
@@ -334,7 +330,7 @@ void Input_Init(void) {
       #endif
 
       for (uint8_t i=0; i<INPUTS_NR; i++) {
-        if (input1[i].typDef == 3) {  // If Input type defined is 3 (auto), identify the input type based on the values from config.h
+        if (input1[i].typDef == 3) {  // 如果输入类型定义为 3（自动），根据 config.h 中的值识别输入类型
           input1[i].typ = checkInputType(input1[i].min, input1[i].mid, input1[i].max);
         } else {
           input1[i].typ = input1[i].typDef;
@@ -356,7 +352,7 @@ void Input_Init(void) {
     enable = 1;
 
     HAL_FLASH_Unlock();
-    EE_Init();            /* EEPROM Init */
+    EE_Init();            /* EEPROM 初始化 */
     EE_ReadVariable(VirtAddVarTab[0], &saveValue);
     HAL_FLASH_Lock();
 
@@ -376,7 +372,7 @@ void Input_Init(void) {
     lcd.type                    = TYPE0;
 
     if(LCD_Init(&lcd)!=LCD_OK) {
-        // error occured
+        // 发生错误
         //TODO while(1);
     }
 
@@ -404,25 +400,25 @@ void Input_Init(void) {
 }
 
 /**
-  * @brief  Disable Rx Errors detection interrupts on UART peripheral (since we do not want DMA to be stopped)
-  *         The incorrect data will be filtered based on the START_FRAME and checksum.
-  * @param  huart: UART handle.
+  * @brief  禁用 UART 外设上的接收错误检测中断（因为我们不希望 DMA 被停止）
+  *         错误数据将基于起始帧和校验和进行过滤。
+  * @param  huart: UART 句柄。
   * @retval None
   */
 #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2) || \
     defined(DEBUG_SERIAL_USART3) || defined(CONTROL_SERIAL_USART3) || defined(SIDEBOARD_SERIAL_USART3)
 void UART_DisableRxErrors(UART_HandleTypeDef *huart)
 {  
-  CLEAR_BIT(huart->Instance->CR1, USART_CR1_PEIE);    /* Disable PE (Parity Error) interrupts */  
-  CLEAR_BIT(huart->Instance->CR3, USART_CR3_EIE);     /* Disable EIE (Frame error, noise error, overrun error) interrupts */
+  CLEAR_BIT(huart->Instance->CR1, USART_CR1_PEIE);    /* 禁用 PE（奇偶校验错误）中断 */  
+  CLEAR_BIT(huart->Instance->CR3, USART_CR3_EIE);     /* 禁用 EIE（帧错误、噪声错误、溢出错误）中断 */
 }
 #endif
 
 
-/* =========================== General Functions =========================== */
+/* =========================== 通用函数 =========================== */
 
 void poweronMelody(void) {
-    buzzerCount = 0;  // prevent interraction with beep counter
+    buzzerCount = 0;  // 防止与蜂鸣计数器相互干扰
     for (int i = 8; i >= 0; i--) {
       buzzerFreq = (uint8_t)i;
       HAL_Delay(100);
@@ -437,25 +433,25 @@ void beepCount(uint8_t cnt, uint8_t freq, uint8_t pattern) {
 }
 
 void beepLong(uint8_t freq) {
-    buzzerCount = 0;  // prevent interraction with beep counter
+    buzzerCount = 0;  // 防止与蜂鸣计数器相互干扰
     buzzerFreq = freq;
     HAL_Delay(500);
     buzzerFreq = 0;
 }
 
 void beepShort(uint8_t freq) {
-    buzzerCount = 0;  // prevent interraction with beep counter
+    buzzerCount = 0;  // 防止与蜂鸣计数器相互干扰
     buzzerFreq = freq;
     HAL_Delay(100);
     buzzerFreq = 0;
 }
 
 void beepShortMany(uint8_t cnt, int8_t dir) {
-    if (dir >= 0) {   // increasing tone
+    if (dir >= 0) {   // 升调
       for(uint8_t i = 2*cnt; i >= 2; i=i-2) {
         beepShort(i + 3);
       }
-    } else {          // decreasing tone
+    } else {          // 降调
       for(uint8_t i = 2; i <= 2*cnt; i=i+2) {
         beepShort(i + 3);
       }
@@ -472,7 +468,7 @@ void beepShortMany(uint8_t cnt, int8_t dir) {
 #endif
 
 void calcAvgSpeed(void) {
-    // Calculate measured average speed. The minus sign (-) is because motors spin in opposite directions
+    // 计算平均测量速度。负号（-）是因为电机以相反方向旋转
     speedAvg = 0;
     #if defined(MOTOR_LEFT_ENA)
       #if defined(INVERT_L_DIRECTION)
@@ -488,13 +484,13 @@ void calcAvgSpeed(void) {
         speedAvg -= rtY_Right.n_mot;
       #endif
 
-      // Average only if both motors are enabled
+      // 仅当两个电机都使能时才取平均
       #if defined(MOTOR_LEFT_ENA)
         speedAvg /= 2;
       #endif  
     #endif
 
-    // Handle the case when SPEED_COEFFICIENT sign is negative (which is when most significant bit is 1)
+    // 处理 SPEED_COEFFICIENT 符号为负的情况（即最高有效位为 1 时）
     if (SPEED_COEFFICIENT & (1 << 16)) {
       speedAvg    = -speedAvg;
     } 
@@ -502,19 +498,19 @@ void calcAvgSpeed(void) {
 }
 
  /*
- * Auto-calibration of the ADC Limits
- * This function finds the Minimum, Maximum, and Middle for the ADC input
- * Procedure:
- * - press the power button for more than 5 sec and release after the beep sound
- * - move the potentiometers freely to the min and max limits repeatedly
- * - release potentiometers to the resting postion
- * - press the power button to confirm or wait for the 20 sec timeout
- * The Values will be saved to flash. Values are persistent if you flash with platformio. To erase them, make a full chip erase.
+ * ADC 限值自动校准
+ * 该函数用于查找 ADC 输入的最小值、最大值和中位值
+ * 步骤：
+ * - 按住电源按钮超过 5 秒，并在蜂鸣声后松开
+ * - 反复将电位器自由移动到最小和最大限值
+ * - 将电位器释放到静止位置
+ * - 按下电源按钮确认，或等待 20 秒超时
+ * 数值将保存到 Flash 中。如果使用 platformio 刷写，数值会持久保存。要擦除它们，请执行整片擦除。
  */
 void adcCalibLim(void) {
 #ifdef AUTO_CALIBRATION_ENA
   calcAvgSpeed();
-  if (speedAvgAbs > 5) {    // do not enter this mode if motors are spinning
+  if (speedAvgAbs > 5) {    // 如果电机正在旋转，请勿进入此模式
     return;
   }
 
@@ -528,7 +524,7 @@ void adcCalibLim(void) {
   #endif
 
   readInputRaw();
-  // Inititalization: MIN = a high value, MAX = a low value
+  // 初始化：MIN = 高值，MAX = 低值
   int32_t  input1_fixdt = input1[inIdx].raw << 16;
   int32_t  input2_fixdt = input2[inIdx].raw << 16;
   int16_t  INPUT1_MIN_temp = MAX_int16_T;
@@ -546,13 +542,13 @@ void adcCalibLim(void) {
   }
   #endif
 
-  // Extract MIN, MAX and MID from ADC while the power button is not pressed
-  while (!HAL_GPIO_ReadPin(BUTTON_PORT, BUTTON_PIN) && input_cal_timeout++ < 4000) {   // 20 sec timeout
+  // 在电源按钮未按下时，从 ADC 提取 MIN、MAX 和 MID
+  while (!HAL_GPIO_ReadPin(BUTTON_PORT, BUTTON_PIN) && input_cal_timeout++ < 4000) {   // 20 秒超时
     readInputRaw();
     filtLowPass32(input1[inIdx].raw, FILTER, &input1_fixdt);
     filtLowPass32(input2[inIdx].raw, FILTER, &input2_fixdt);
     
-    INPUT1_MID_temp = (int16_t)(input1_fixdt >> 16);// CLAMP(input1_fixdt >> 16, INPUT1_MIN, INPUT1_MAX);   // convert fixed-point to integer
+    INPUT1_MID_temp = (int16_t)(input1_fixdt >> 16);// CLAMP(input1_fixdt >> 16, INPUT1_MIN, INPUT1_MAX);   // 将定点数转换为整数
     INPUT2_MID_temp = (int16_t)(input2_fixdt >> 16);// CLAMP(input2_fixdt >> 16, INPUT2_MIN, INPUT2_MAX);
     INPUT1_MIN_temp = MIN(INPUT1_MIN_temp, INPUT1_MID_temp);
     INPUT1_MAX_temp = MAX(INPUT1_MAX_temp, INPUT1_MID_temp);
@@ -565,12 +561,12 @@ void adcCalibLim(void) {
   printf("Input1 is ");
   #endif
   uint8_t input1TypTemp = checkInputType(INPUT1_MIN_temp, INPUT1_MID_temp, INPUT1_MAX_temp);
-  if (input1TypTemp == input1[inIdx].typDef || input1[inIdx].typDef == 3) {  // Accept calibration only if the type is correct OR type was set to 3 (auto)
+  if (input1TypTemp == input1[inIdx].typDef || input1[inIdx].typDef == 3) {  // 仅在类型正确或类型设置为 3（自动）时接受校准
     #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART3)
     printf("..OK\r\n");
     #endif
   } else {
-    input1TypTemp = 0; // Disable input
+    input1TypTemp = 0; // 禁用输入
     #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART3)
     printf("..NOK\r\n");
     #endif
@@ -580,19 +576,19 @@ void adcCalibLim(void) {
   printf("Input2 is ");
   #endif
   uint8_t input2TypTemp = checkInputType(INPUT2_MIN_temp, INPUT2_MID_temp, INPUT2_MAX_temp);
-  if (input2TypTemp == input2[inIdx].typDef || input2[inIdx].typDef == 3) {  // Accept calibration only if the type is correct OR type was set to 3 (auto)
+  if (input2TypTemp == input2[inIdx].typDef || input2[inIdx].typDef == 3) {  // 仅在类型正确或类型设置为 3（自动）时接受校准
     #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART3)
     printf("..OK\r\n");
     #endif
   } else {
-    input2TypTemp = 0; // Disable input
+    input2TypTemp = 0; // 禁用输入
     #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART3)
     printf("..NOK\r\n");
     #endif
   }
 
 
-  // At least one of the inputs is not ignored
+  // 至少有一个输入未被忽略
   if (input1TypTemp != 0 || input2TypTemp != 0){
     input1[inIdx].typ = input1TypTemp;
     input1[inIdx].min = INPUT1_MIN_temp + input_margin;
@@ -604,7 +600,7 @@ void adcCalibLim(void) {
     input2[inIdx].mid = INPUT2_MID_temp;
     input2[inIdx].max = INPUT2_MAX_temp - input_margin;
 
-    inp_cal_valid = 1;    // Mark calibration to be saved in Flash at shutdown
+    inp_cal_valid = 1;    // 标记校准值，在关机时保存到 Flash
     #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART3)
     printf("Limits Input1: TYP:%i MIN:%i MID:%i MAX:%i\r\nLimits Input2: TYP:%i MIN:%i MID:%i MAX:%i\r\n",
             input1[inIdx].typ, input1[inIdx].min, input1[inIdx].mid, input1[inIdx].max,
@@ -620,15 +616,15 @@ void adcCalibLim(void) {
 #endif  // AUTO_CALIBRATION_ENA
 }
  /*
- * Update Maximum Motor Current Limit (via ADC1) and Maximum Speed Limit (via ADC2)
- * Procedure:
- * - press the power button for more than 5 sec and immediatelly after the beep sound press one more time shortly
- * - move and hold the pots to a desired limit position for Current and Speed
- * - press the power button to confirm or wait for the 10 sec timeout
+ * 更新最大电机电流限制（通过 ADC1）和最大速度限制（通过 ADC2）
+ * 步骤：
+ * - 按住电源按钮超过 5 秒，在蜂鸣声后立即再短按一次
+ * - 移动并保持电位器到所需的电流和速度限值位置
+ * - 按下电源按钮确认，或等待 10 秒超时
  */
 void updateCurSpdLim(void) {
   calcAvgSpeed();
-  if (speedAvgAbs > 5) {    // do not enter this mode if motors are spinning
+  if (speedAvgAbs > 5) {    // 如果电机正在旋转，请勿进入此模式
     return;
   }
 
@@ -647,31 +643,31 @@ void updateCurSpdLim(void) {
   uint16_t cur_spd_timeout = 0;
   cur_spd_valid = 0;
 
-  // Wait for the power button press
-  while (!HAL_GPIO_ReadPin(BUTTON_PORT, BUTTON_PIN) && cur_spd_timeout++ < 2000) {  // 10 sec timeout
+  // 等待电源按钮按下
+  while (!HAL_GPIO_ReadPin(BUTTON_PORT, BUTTON_PIN) && cur_spd_timeout++ < 2000) {  // 10 秒超时
     readInputRaw();
     filtLowPass32(input1[inIdx].raw, FILTER, &input1_fixdt);
     filtLowPass32(input2[inIdx].raw, FILTER, &input2_fixdt);
     HAL_Delay(5);
   }
-  // Calculate scaling factors
-  cur_factor = CLAMP((input1_fixdt - (input1[inIdx].min << 16)) / (input1[inIdx].max - input1[inIdx].min), 6553, 65535);    // ADC1, MIN_cur(10%) = 1.5 A 
-  spd_factor = CLAMP((input2_fixdt - (input2[inIdx].min << 16)) / (input2[inIdx].max - input2[inIdx].min), 3276, 65535);    // ADC2, MIN_spd(5%)  = 50 rpm
+  // 计算缩放因子
+  cur_factor = CLAMP((input1_fixdt - (input1[inIdx].min << 16)) / (input1[inIdx].max - input1[inIdx].min), 6553, 65535);    // ADC1, 最小电流(10%) = 1.5 A 
+  spd_factor = CLAMP((input2_fixdt - (input2[inIdx].min << 16)) / (input2[inIdx].max - input2[inIdx].min), 3276, 65535);    // ADC2, 最小速度(5%) = 50 rpm
       
   if (input1[inIdx].typ != 0){
-    // Update current limit
-    rtP_Left.i_max = rtP_Right.i_max  = (int16_t)((I_MOT_MAX * A2BIT_CONV * cur_factor) >> 12);    // fixdt(0,16,16) to fixdt(1,16,4)
-    cur_spd_valid   = 1;  // Mark update to be saved in Flash at shutdown
+    // 更新电流限制
+    rtP_Left.i_max = rtP_Right.i_max  = (int16_t)((I_MOT_MAX * A2BIT_CONV * cur_factor) >> 12);    // fixdt(0,16,16) 转 fixdt(1,16,4)
+    cur_spd_valid   = 1;  // 标记更新值，在关机时保存到 Flash
   }
 
   if (input2[inIdx].typ != 0){
-    // Update speed limit
-    rtP_Left.n_max = rtP_Right.n_max  = (int16_t)((N_MOT_MAX * spd_factor) >> 12);                 // fixdt(0,16,16) to fixdt(1,16,4)
-    cur_spd_valid  += 2;  // Mark update to be saved in Flash at shutdown
+    // 更新速度限制
+    rtP_Left.n_max = rtP_Right.n_max  = (int16_t)((N_MOT_MAX * spd_factor) >> 12);                 // fixdt(0,16,16) 转 fixdt(1,16,4)
+    cur_spd_valid  += 2;  // 标记更新值，在关机时保存到 Flash
   }
 
   #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART3)
-  // cur_spd_valid: 0 = No limit changed, 1 = Current limit changed, 2 = Speed limit changed, 3 = Both limits changed
+  // cur_spd_valid: 0 = 未更改限制, 1 = 电流限制已更改, 2 = 速度限制已更改, 3 = 两项限制均已更改
   printf("Limits (%i)\r\nCurrent: fixdt:%li factor%i i_max:%i \r\nSpeed: fixdt:%li factor:%i n_max:%i\r\n",
           cur_spd_valid, input1_fixdt, cur_factor, rtP_Left.i_max, input2_fixdt, spd_factor, rtP_Left.n_max);
   #endif
@@ -680,18 +676,18 @@ void updateCurSpdLim(void) {
 }
 
  /*
- * Standstill Hold Function
- * This function uses Cruise Control to provide an anti-roll functionality at standstill.
- * Only available and makes sense for FOC VOLTAGE or FOC TORQUE mode.
+ * 静止保持功能
+ * 该功能使用巡航控制在静止时提供防溜车功能。
+ * 仅在 FOC 电压模式或 FOC 转矩模式下可用且有意义。
  * 
- * Input:  none
- * Output: standstillAcv
+ * 输入：无
+ * 输出：standstillAcv
  */
 void standstillHold(void) {
   #if defined(STANDSTILL_HOLD_ENABLE) && (CTRL_TYP_SEL == FOC_CTRL) && (CTRL_MOD_REQ != SPD_MODE)
-    if (!rtP_Left.b_cruiseCtrlEna) {                                  // If Stanstill in NOT Active -> try Activation
-      if (((input1[inIdx].cmd > 50 || input2[inIdx].cmd < -50) && speedAvgAbs < 30) // Check if Brake is pressed AND measured speed is small
-          || (input2[inIdx].cmd < 20 && speedAvgAbs < 5)) {           // OR Throttle is small AND measured speed is very small
+    if (!rtP_Left.b_cruiseCtrlEna) {                                  // 如果静止保持未激活 -> 尝试激活
+      if (((input1[inIdx].cmd > 50 || input2[inIdx].cmd < -50) && speedAvgAbs < 30) // 检查刹车是否按下且测量速度很小
+          || (input2[inIdx].cmd < 20 && speedAvgAbs < 5)) {           // 或油门很小且测量速度非常小
         rtP_Left.n_cruiseMotTgt   = 0;
         rtP_Right.n_cruiseMotTgt  = 0;
         rtP_Left.b_cruiseCtrlEna  = 1;
@@ -699,8 +695,8 @@ void standstillHold(void) {
         standstillAcv = 1;
       } 
     }
-    else {                                                            // If Stanstill is Active -> try Deactivation
-      if (input1[inIdx].cmd < 20 && input2[inIdx].cmd > 50 && !cruiseCtrlAcv) { // Check if Brake is released AND Throttle is pressed AND no Cruise Control
+    else {                                                            // 如果静止保持已激活 -> 尝试解除
+      if (input1[inIdx].cmd < 20 && input2[inIdx].cmd > 50 && !cruiseCtrlAcv) { // 检查刹车是否释放且油门是否按下且未启用巡航控制
         rtP_Left.b_cruiseCtrlEna  = 0;
         rtP_Right.b_cruiseCtrlEna = 0;
         standstillAcv = 0;
@@ -710,59 +706,59 @@ void standstillHold(void) {
 }
 
  /*
- * Electric Brake Function
- * In case of TORQUE mode, this function replaces the motor "freewheel" with a constant braking when the input torque request is 0.
- * This is useful when a small amount of motor braking is desired instead of "freewheel".
+ * 电动制动功能
+ * 在转矩模式下，当输入转矩请求为 0 时，该功能用恒定制动代替电机的“自由滑行”。
+ * 这在希望有少量电机制动而不是“自由滑行”时很有用。
  * 
- * Input: speedBlend = fixdt(0,16,15), reverseDir = {0, 1}
- * Output: input2.cmd (Throtle) with brake component included
+ * 输入：speedBlend = fixdt(0,16,15), reverseDir = {0, 1}
+ * 输出：input2.cmd（油门），包含制动分量
  */
 void electricBrake(uint16_t speedBlend, uint8_t reverseDir) {
   #if defined(ELECTRIC_BRAKE_ENABLE) && (CTRL_TYP_SEL == FOC_CTRL) && (CTRL_MOD_REQ == TRQ_MODE)
     int16_t brakeVal;
 
-    // Make sure the Brake pedal is opposite to the direction of motion AND it goes to 0 as we reach standstill (to avoid Reverse driving) 
+    // 确保制动踏板与运动方向相反，并且在接近静止时归零（以避免倒车） 
     if (speedAvg > 0) {
       brakeVal = (int16_t)((-ELECTRIC_BRAKE_MAX * speedBlend) >> 15);
     } else {
       brakeVal = (int16_t)(( ELECTRIC_BRAKE_MAX * speedBlend) >> 15);
     }
 
-    // Check if direction is reversed
+    // 检查方向是否反转
     if (reverseDir) {
       brakeVal = -brakeVal;
     }
 
-    // Calculate the new input2.cmd with brake component included
+    // 计算包含制动分量的新 input2.cmd
     if (input2[inIdx].cmd >= 0 && input2[inIdx].cmd < ELECTRIC_BRAKE_THRES) {
       input2[inIdx].cmd = MAX(brakeVal, ((ELECTRIC_BRAKE_THRES - input2[inIdx].cmd) * brakeVal) / ELECTRIC_BRAKE_THRES);
     } else if (input2[inIdx].cmd >= -ELECTRIC_BRAKE_THRES && input2[inIdx].cmd < 0) {
       input2[inIdx].cmd = MIN(brakeVal, ((ELECTRIC_BRAKE_THRES + input2[inIdx].cmd) * brakeVal) / ELECTRIC_BRAKE_THRES);
     } else if (input2[inIdx].cmd >= ELECTRIC_BRAKE_THRES) {
       input2[inIdx].cmd = MAX(brakeVal, ((input2[inIdx].cmd - ELECTRIC_BRAKE_THRES) * INPUT_MAX) / (INPUT_MAX - ELECTRIC_BRAKE_THRES));
-    } else {  // when (input2.cmd < -ELECTRIC_BRAKE_THRES)
+    } else {  // 当 (input2.cmd < -ELECTRIC_BRAKE_THRES) 时
       input2[inIdx].cmd = MIN(brakeVal, ((input2[inIdx].cmd + ELECTRIC_BRAKE_THRES) * INPUT_MIN) / (INPUT_MIN + ELECTRIC_BRAKE_THRES));
     }
   #endif
 }
 
  /*
- * Cruise Control Function
- * This function activates/deactivates cruise control.
+ * 巡航控制功能
+ * 该功能用于激活/关闭巡航控制。
  * 
- * Input: button (as a pulse)
- * Output: cruiseCtrlAcv
+ * 输入：button（作为脉冲）
+ * 输出：cruiseCtrlAcv
  */
 void cruiseControl(uint8_t button) {
   #ifdef CRUISE_CONTROL_SUPPORT
-    if (button && !rtP_Left.b_cruiseCtrlEna) {                          // Cruise control activated
+    if (button && !rtP_Left.b_cruiseCtrlEna) {                          // 巡航控制已激活
       rtP_Left.n_cruiseMotTgt   = rtY_Left.n_mot;
       rtP_Right.n_cruiseMotTgt  = rtY_Right.n_mot;
       rtP_Left.b_cruiseCtrlEna  = 1;
       rtP_Right.b_cruiseCtrlEna = 1;
       cruiseCtrlAcv = 1;
-      beepShortMany(2, 1);                                              // 200 ms beep delay. Acts as a debounce also.
-    } else if (button && rtP_Left.b_cruiseCtrlEna && !standstillAcv) {  // Cruise control deactivated if no Standstill Hold is active
+      beepShortMany(2, 1);                                              // 200 毫秒蜂鸣延时，同时用作去抖。
+    } else if (button && rtP_Left.b_cruiseCtrlEna && !standstillAcv) {  // 如果未激活静止保持，则关闭巡航控制
       rtP_Left.b_cruiseCtrlEna  = 0;
       rtP_Right.b_cruiseCtrlEna = 0;
       cruiseCtrlAcv = 0;
@@ -771,8 +767,8 @@ void cruiseControl(uint8_t button) {
   #endif
 }
   #ifdef VARIANT_BBCAR
-    static float speedRL = 0.0;  // [-1000.0 to 1000.0] for high precision internal speed calculation
-    static float weak = 0.0;  // [-0.0 to 500.0]
+    static float speedRL = 0.0;  // [-1000.0 到 1000.0] 用于高精度内部速度计算
+    static float weak = 0.0;  // [-0.0 到 500.0]
     
     extern int16_t speedL, speedR, speed;
 
@@ -798,7 +794,7 @@ void cruiseControl(uint8_t button) {
     }
 
     int32_t isAroundMin(int32_t value, int32_t minn, int32_t maxx){
-      // min and max calibration values are saved with ADC_MARGIN already substracted or added. This is useful for calculating throttle range but for detecting driving modes it is not. So here we use the real adc values:
+      // 最小和最大校准值在保存时已减去或加上 ADC_MARGIN。这对计算油门范围有用，但对检测驾驶模式不适用。因此这里使用真实的 ADC 值：
       minn -= ADC_MARGIN;
       maxx += ADC_MARGIN;
 
@@ -817,15 +813,15 @@ void cruiseControl(uint8_t button) {
     }
 
      /*
-     * Driving mode detection on startup
-     * Hold different combinations of forward oder backwart poti on startup to select driving mode.
+     * 启动时的驾驶模式检测
+     * 启动时按住前进或后退电位器的不同组合来选择驾驶模式。
      * 
-     * Input: potis: full press poti(s), poweron, release poti(s)
-     * Output: drive_mode
+     * 输入：电位器：完全按下电位器、上电、释放电位器
+     * 输出：drive_mode
      */
     void bbcarDetectDrivingMode() {
       readInputRaw();
-      input1_filtered = input1[inIdx].min;  // set start value
+      input1_filtered = input1[inIdx].min;  // 设置起始值
       input2_filtered = input2[inIdx].min;
       
       printf("\r\n");
@@ -840,19 +836,19 @@ void cruiseControl(uint8_t button) {
       printf("# ADC_MARGIN: %i\r\n", ADC_MARGIN);
       printf("\r\n");
 
-      int16_t start_left  = input2[inIdx].raw;  // ADC2, left, backward, green
-      int16_t start_right = input1[inIdx].raw;  // ADC1, right, foward, blue
+      int16_t start_left  = input2[inIdx].raw;  // ADC2，左侧，后退，绿色
+      int16_t start_right = input1[inIdx].raw;  // ADC1，右侧，前进，蓝色
       HAL_Delay(300);
-      if(isAroundMax(start_left, input2[inIdx].min, input2[inIdx].max) && isAroundMax(start_right, input1[inIdx].min, input1[inIdx].max)){  // Mode 4
+      if(isAroundMax(start_left, input2[inIdx].min, input2[inIdx].max) && isAroundMax(start_right, input1[inIdx].min, input1[inIdx].max)){  // 模式 4
         drive_mode = 4;
         beepShortMany2(4);
-      } else if(isAroundMin(start_left, input2[inIdx].min, input2[inIdx].max) && isAroundMax(start_right, input1[inIdx].min, input1[inIdx].max)){  // Mode 3
+      } else if(isAroundMin(start_left, input2[inIdx].min, input2[inIdx].max) && isAroundMax(start_right, input1[inIdx].min, input1[inIdx].max)){  // 模式 3
         drive_mode = 3;
         beepShortMany2(3);
-      } else if(isAroundMax(start_left, input2[inIdx].min, input2[inIdx].max) && isAroundMin(start_right, input1[inIdx].min, input1[inIdx].max)){  // Mode 1
+      } else if(isAroundMax(start_left, input2[inIdx].min, input2[inIdx].max) && isAroundMin(start_right, input1[inIdx].min, input1[inIdx].max)){  // 模式 1
         drive_mode = 1;
         beepShortMany2(1);
-      } else if(isAroundMin(start_left, input2[inIdx].min, input2[inIdx].max) && isAroundMin(start_right, input1[inIdx].min, input1[inIdx].max)) {  // Mode 2
+      } else if(isAroundMin(start_left, input2[inIdx].min, input2[inIdx].max) && isAroundMin(start_right, input1[inIdx].min, input1[inIdx].max)) {  // 模式 2
         drive_mode = 2;
         beepShortMany2(2);
       }
@@ -908,7 +904,7 @@ void cruiseControl(uint8_t button) {
       }
 
       if (drive_mode == 1) {  
-        speedRL = speedRL * (1.0 - (speedRL > 0 ? ACC_FORWARDS_M1/MAX_SPEED_FORWARDS_M1*5.0 : ACC_BACKWARDS_M1/MAX_SPEED_BACKWARDS_M1*5.0))  // breaking if poti is not pressed
+        speedRL = speedRL * (1.0 - (speedRL > 0 ? ACC_FORWARDS_M1/MAX_SPEED_FORWARDS_M1*5.0 : ACC_BACKWARDS_M1/MAX_SPEED_BACKWARDS_M1*5.0))  // 电位器未按下时减速
                 + acc_cmd * ACC_FORWARDS_M1*5.0  
                 - brk_cmd * ACC_BACKWARDS_M1*5.0;  
 
@@ -932,7 +928,7 @@ void cruiseControl(uint8_t button) {
                   + acc_cmd * ACC_FORWARDS_M4*5.0; 
           weak = weak * 0.95 + 500.0 * 0.05;  
         } else {  
-          speedRL = speedRL * (1.0 - (speedRL > 0 ? ACC_FORWARDS_M4/MAX_SPEED_FORWARDS_M4*5.0 : ACC_BACKWARDS_M4/MAX_SPEED_BACKWARDS_M4*5.0))  // breaking if poti is not pressed
+          speedRL = speedRL * (1.0 - (speedRL > 0 ? ACC_FORWARDS_M4/MAX_SPEED_FORWARDS_M4*5.0 : ACC_BACKWARDS_M4/MAX_SPEED_BACKWARDS_M4*5.0))  // 电位器未按下时减速
                   + acc_cmd * ACC_FORWARDS_M4*5.0  
                   - brk_cmd * ACC_BACKWARDS_M4*5.0;  
           weak = weak * 0.95;  
@@ -947,14 +943,14 @@ void cruiseControl(uint8_t button) {
 
 
  /*
- * Check Input Type
- * This function identifies the input type: 0: Disabled, 1: Normal Pot, 2: Middle Resting Pot
+ * 检查输入类型
+ * 该函数识别输入类型：0：禁用，1：普通电位器，2：中位回弹电位器
  */
 int checkInputType(int16_t min, int16_t mid, int16_t max){
 
   int type = 0;  
   #ifdef CONTROL_ADC
-  int16_t threshold = 400;      // Threshold to define if values are too close
+  int16_t threshold = 400;      // 定义数值是否过于接近的阈值
   #else
   int16_t threshold = 200;
   #endif
@@ -962,18 +958,18 @@ int checkInputType(int16_t min, int16_t mid, int16_t max){
   if ((min / threshold) == (max / threshold) || (mid / threshold) == (max / threshold) || min > max || mid > max) {
     type = 0;
     #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART3)
-    printf("ignored");                // (MIN and MAX) OR (MID and MAX) are close, disable input
+    printf("ignored");                // （MIN 和 MAX）或（MID 和 MAX）过于接近，禁用输入
     #endif
   } else {
     if ((min / threshold) == (mid / threshold)){
       type = 1;
       #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART3)
-      printf("a normal pot");        // MIN and MID are close, it's a normal pot
+      printf("a normal pot");        // MIN 和 MID 接近，是普通电位器
       #endif
     } else {
       type = 2;
       #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART3)
-      printf("a mid-resting pot");   // it's a mid resting pot
+      printf("a mid-resting pot");   // 是中位回弹电位器
       #endif
     }
 
@@ -982,7 +978,7 @@ int checkInputType(int16_t min, int16_t mid, int16_t max){
       #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART3)
       printf(" AND protected");
       #endif
-      beepLong(2); // Indicate protection by a beep
+      beepLong(2); // 通过蜂鸣声指示保护已启用
     }
     #endif
   }
@@ -992,18 +988,18 @@ int checkInputType(int16_t min, int16_t mid, int16_t max){
 
 
 
-/* =========================== Input Functions =========================== */
+/* =========================== 输入函数 =========================== */
 
  /*
- * Calculate Input Command
- * This function realizes dead-band around 0 and scales the input between [out_min, out_max]
+ * 计算输入命令
+ * 该函数在 0 附近实现死区，并将输入缩放到 [out_min, out_max] 之间
  */
 void calcInputCmd(InputStruct *in, int16_t out_min, int16_t out_max) {
   switch (in->typ){
-    case 1: // Input is a normal pot
+    case 1: // 输入是普通电位器
       in->cmd = CLAMP(MAP(in->raw, in->min, in->max, 0, out_max), 0, out_max);
       break;
-    case 2: // Input is a mid resting pot
+    case 2: // 输入是中位回弹电位器
       if( in->raw > in->mid - in->dband && in->raw < in->mid + in->dband ) {
         in->cmd = 0;
       } else if(in->raw > in->mid) {
@@ -1012,14 +1008,14 @@ void calcInputCmd(InputStruct *in, int16_t out_min, int16_t out_max) {
         in->cmd = CLAMP(MAP(in->raw, in->mid - in->dband, in->min, 0, out_min), out_min, 0);
       }
       break;
-    default: // Input is ignored
+    default: // 输入被忽略
       in->cmd = 0;
       break;
   }
 }
 
  /*
- * Function to read the Input Raw values from various input devices
+ * 从各种输入设备读取原始输入值的函数
  */
 void readInputRaw(void) {
     #ifdef CONTROL_ADC
@@ -1037,8 +1033,8 @@ void readInputRaw(void) {
     #if defined(CONTROL_NUNCHUK) || defined(SUPPORT_NUNCHUK)
     if (Nunchuk_Read() == NUNCHUK_CONNECTED) {
       if (inIdx == CONTROL_NUNCHUK) {
-        input1[inIdx].raw = (nunchuk_data[0] - 127) * 8; // X axis 0-255
-        input2[inIdx].raw = (nunchuk_data[1] - 128) * 8; // Y axis 0-255
+        input1[inIdx].raw = (nunchuk_data[0] - 127) * 8; // X 轴 0-255
+        input2[inIdx].raw = (nunchuk_data[1] - 128) * 8; // Y 轴 0-255
       }
       #ifdef SUPPORT_BUTTONS
         button1 = (uint8_t)nunchuk_data[5] & 1;
@@ -1132,68 +1128,68 @@ void readInputRaw(void) {
 }
 
  /*
- * Function to handle the ADC, UART and General timeout (Nunchuk, PPM, PWM)
+ * 处理 ADC、UART 和通用超时（Nunchuk、PPM、PWM）的函数
  */
 void handleTimeout(void) {
     #ifdef CONTROL_ADC
     if (inIdx == CONTROL_ADC) {
-      // If input1 or Input2 is either below MIN - Threshold or above MAX + Threshold, ADC protection timeout
+      // 如果 input1 或 Input2 低于 MIN - 阈值或高于 MAX + 阈值，则触发 ADC 保护超时
       if (IN_RANGE(input1[inIdx].raw, input1[inIdx].min - ADC_PROTECT_THRESH, input1[inIdx].max + ADC_PROTECT_THRESH) &&
           IN_RANGE(input2[inIdx].raw, input2[inIdx].min - ADC_PROTECT_THRESH, input2[inIdx].max + ADC_PROTECT_THRESH)) {
-          timeoutFlgADC = 0;                            // Reset the timeout flag
-          timeoutCntADC = 0;                            // Reset the timeout counter
+          timeoutFlgADC = 0;                            // 重置超时标志
+          timeoutCntADC = 0;                            // 重置超时计数器
       } else {
-        if (timeoutCntADC++ >= ADC_PROTECT_TIMEOUT) {   // Timeout qualification
-          timeoutFlgADC = 1;                            // Timeout detected
-          timeoutCntADC = ADC_PROTECT_TIMEOUT;          // Limit timout counter value
+        if (timeoutCntADC++ >= ADC_PROTECT_TIMEOUT) {   // 超时判定
+          timeoutFlgADC = 1;                            // 检测到超时
+          timeoutCntADC = ADC_PROTECT_TIMEOUT;          // 限制超时计数器数值
         }
       }
     }
     #endif
 
     #if defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
-      if (timeoutCntSerial_L++ >= SERIAL_TIMEOUT) {     // Timeout qualification
-        timeoutFlgSerial_L = 1;                         // Timeout detected
-        timeoutCntSerial_L = SERIAL_TIMEOUT;            // Limit timout counter value
+      if (timeoutCntSerial_L++ >= SERIAL_TIMEOUT) {     // 超时判定
+        timeoutFlgSerial_L = 1;                         // 检测到超时
+        timeoutCntSerial_L = SERIAL_TIMEOUT;            // 限制超时计数器数值
         #if defined(DUAL_INPUTS) && ((defined(CONTROL_SERIAL_USART2) && CONTROL_SERIAL_USART2 == 1) || (defined(SIDEBOARD_SERIAL_USART2) && SIDEBOARD_SERIAL_USART2 == 1))
-          inIdx = 0;                                    // Switch to Primary input in case of Timeout on Auxiliary input
+          inIdx = 0;                                    // 辅助输入超时时切换到主输入
         #endif
-      } else {                                          // No Timeout
+      } else {                                          // 未超时
         #if defined(DUAL_INPUTS) && defined(SIDEBOARD_SERIAL_USART2)
-          if (Sideboard_L.sensors & SWA_SET) {          // If SWA is set, switch to Sideboard control
+          if (Sideboard_L.sensors & SWA_SET) {          // 如果 SWA 已设置，切换到侧板控制
             inIdx = SIDEBOARD_SERIAL_USART2;
           } else {
             inIdx = !SIDEBOARD_SERIAL_USART2;
           }
         #elif defined(DUAL_INPUTS) && (defined(CONTROL_SERIAL_USART2) && CONTROL_SERIAL_USART2 == 1)
-          inIdx = 1;                                    // Switch to Auxiliary input in case of NO Timeout on Auxiliary input
+          inIdx = 1;                                    // 辅助输入未超时时切换到辅助输入
         #endif
       }
       #if (defined(CONTROL_SERIAL_USART2) && CONTROL_SERIAL_USART2 == 0) || (defined(SIDEBOARD_SERIAL_USART2) && SIDEBOARD_SERIAL_USART2 == 0 && !defined(VARIANT_HOVERBOARD))
-        timeoutFlgSerial = timeoutFlgSerial_L;          // Report Timeout only on the Primary Input
+        timeoutFlgSerial = timeoutFlgSerial_L;          // 仅在主输入上报告超时
       #endif
     #endif
 
     #if defined(CONTROL_SERIAL_USART3) || defined(SIDEBOARD_SERIAL_USART3)
-      if (timeoutCntSerial_R++ >= SERIAL_TIMEOUT) {     // Timeout qualification
-        timeoutFlgSerial_R = 1;                         // Timeout detected
-        timeoutCntSerial_R = SERIAL_TIMEOUT;            // Limit timout counter value
+      if (timeoutCntSerial_R++ >= SERIAL_TIMEOUT) {     // 超时判定
+        timeoutFlgSerial_R = 1;                         // 检测到超时
+        timeoutCntSerial_R = SERIAL_TIMEOUT;            // 限制超时计数器数值
         #if defined(DUAL_INPUTS) && ((defined(CONTROL_SERIAL_USART3) && CONTROL_SERIAL_USART3 == 1) || (defined(SIDEBOARD_SERIAL_USART3) && SIDEBOARD_SERIAL_USART3 == 1))
-          inIdx = 0;                                    // Switch to Primary input in case of Timeout on Auxiliary input
+          inIdx = 0;                                    // 辅助输入超时时切换到主输入
         #endif
-      } else {                                          // No Timeout
+      } else {                                          // 未超时
         #if defined(DUAL_INPUTS) && defined(SIDEBOARD_SERIAL_USART3)
-          if (Sideboard_R.sensors & SWA_SET) {          // If SWA is set, switch to Sideboard control
+          if (Sideboard_R.sensors & SWA_SET) {          // 如果 SWA 已设置，切换到侧板控制
             inIdx = SIDEBOARD_SERIAL_USART3;
           } else {
             inIdx = !SIDEBOARD_SERIAL_USART3;
           }
         #elif defined(DUAL_INPUTS) && (defined(CONTROL_SERIAL_USART3) && CONTROL_SERIAL_USART3 == 1)
-          inIdx = 1;                                    // Switch to Auxiliary input in case of NO Timeout on Auxiliary input
+          inIdx = 1;                                    // 辅助输入未超时时切换到辅助输入
         #endif
       }
       #if (defined(CONTROL_SERIAL_USART3) && CONTROL_SERIAL_USART3 == 0) || (defined(SIDEBOARD_SERIAL_USART3) && SIDEBOARD_SERIAL_USART3 == 0 && !defined(VARIANT_HOVERBOARD))
-        timeoutFlgSerial = timeoutFlgSerial_R;          // Report Timeout only on the Primary Input
+        timeoutFlgSerial = timeoutFlgSerial_R;          // 仅在主输入上报告超时
       #endif
     #endif
 
@@ -1203,48 +1199,48 @@ void handleTimeout(void) {
 
     #if defined(CONTROL_NUNCHUK) || defined(SUPPORT_NUNCHUK) || defined(VARIANT_TRANSPOTTER) || \
         defined(CONTROL_PPM_LEFT) || defined(CONTROL_PPM_RIGHT) || defined(CONTROL_PWM_LEFT) || defined(CONTROL_PWM_RIGHT)
-      if (timeoutCntGen++ >= TIMEOUT) {                 // Timeout qualification
+      if (timeoutCntGen++ >= TIMEOUT) {                 // 超时判定
         #if defined(CONTROL_NUNCHUK) || defined(SUPPORT_NUNCHUK) || defined(VARIANT_TRANSPOTTER) || \
             (defined(CONTROL_PPM_LEFT) && CONTROL_PPM_LEFT == 0) || (defined(CONTROL_PPM_RIGHT) && CONTROL_PPM_RIGHT == 0) || \
             (defined(CONTROL_PWM_LEFT) && CONTROL_PWM_LEFT == 0) || (defined(CONTROL_PWM_RIGHT) && CONTROL_PWM_RIGHT == 0)
-          timeoutFlgGen = 1;                            // Report Timeout only on the Primary Input
+          timeoutFlgGen = 1;                            // 仅在主输入上报告超时
           timeoutCntGen = TIMEOUT;
         #endif
         #if defined(DUAL_INPUTS) && ((defined(CONTROL_PPM_LEFT)  && CONTROL_PPM_LEFT == 1) || (defined(CONTROL_PPM_RIGHT) && CONTROL_PPM_RIGHT == 1) || \
                                      (defined(CONTROL_PWM_LEFT)  && CONTROL_PWM_LEFT == 1) || (defined(CONTROL_PWM_RIGHT) && CONTROL_PWM_RIGHT == 1))
-          inIdx = 0;                                    // Switch to Primary input in case of Timeout on Auxiliary input
+          inIdx = 0;                                    // 辅助输入超时时切换到主输入
         #endif
       } else {
         #if defined(DUAL_INPUTS) && ((defined(CONTROL_PPM_LEFT)  && CONTROL_PPM_LEFT == 1) || (defined(CONTROL_PPM_RIGHT) && CONTROL_PPM_RIGHT == 1) || \
                                      (defined(CONTROL_PWM_LEFT)  && CONTROL_PWM_LEFT == 1) || (defined(CONTROL_PWM_RIGHT) && CONTROL_PWM_RIGHT == 1))
-          inIdx = 1;                                    // Switch to Auxiliary input in case of NO Timeout on Auxiliary input
+          inIdx = 1;                                    // 辅助输入未超时时切换到辅助输入
         #endif
       }
     #endif
 
     #ifndef VARIANT_BBCAR
-      // In case of timeout bring the system to a Safe State
+      // 发生超时时将系统带入安全状态
       if (timeoutFlgADC || timeoutFlgSerial || timeoutFlgGen) {
-        ctrlModReq  = OPEN_MODE;                                          // Request OPEN_MODE. This will bring the motor power to 0 in a controlled way
+        ctrlModReq  = OPEN_MODE;                                          // 请求 OPEN_MODE，这将使电机功率以受控方式降为 0
         input1[inIdx].cmd  = 0;
         input2[inIdx].cmd  = 0;
       } else {
-        ctrlModReq  = ctrlModReqRaw;                                      // Follow the Mode request
+        ctrlModReq  = ctrlModReqRaw;                                      // 跟随模式请求
       }
     #endif
 
-    // Beep in case of Input index change
-    if (inIdx && !inIdx_prev) {                                         // rising edge
+    // 输入索引变化时发出蜂鸣
+    if (inIdx && !inIdx_prev) {                                         // 上升沿
       beepShort(8);
-    } else if (!inIdx && inIdx_prev) {                                  // falling edge
+    } else if (!inIdx && inIdx_prev) {                                  // 下降沿
       beepShort(18);
     }
 }
 
  /*
- * Function to calculate the command to the motors. This function also manages:
- * - timeout detection
- * - MIN/MAX limitations and deadband
+ * 计算电机命令的函数。该函数还管理：
+ * - 超时检测
+ * - 最小/最大限制和死区
  */
 void readCommand(void) {
     readInputRaw();
@@ -1275,77 +1271,77 @@ void readCommand(void) {
     #endif
 
     #if defined(CRUISE_CONTROL_SUPPORT) && (defined(SUPPORT_BUTTONS) || defined(SUPPORT_BUTTONS_LEFT) || defined(SUPPORT_BUTTONS_RIGHT))
-        cruiseControl(button1);                                           // Cruise control activation/deactivation
+        cruiseControl(button1);                                           // 巡航控制激活/停用
     #endif
 }
 
 
 /*
- * Check for new data received on USART2 with DMA: refactored function from https://github.com/MaJerle/stm32-usart-uart-dma-rx-tx
- * - this function is called for every USART IDLE line detection, in the USART interrupt handler
+ * 检查 USART2 DMA 接收的新数据：来自 https://github.com/MaJerle/stm32-usart-uart-dma-rx-tx 的重构函数
+ * - 该函数在每次 USART 空闲线检测时，在 USART 中断处理程序中被调用
  */
 void usart2_rx_check(void)
 {
   #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)  
   static uint32_t old_pos;
   uint32_t pos;
-  pos = rx_buffer_L_len - __HAL_DMA_GET_COUNTER(huart2.hdmarx);         // Calculate current position in buffer
+  pos = rx_buffer_L_len - __HAL_DMA_GET_COUNTER(huart2.hdmarx);         // 计算缓冲区中的当前位置
   #endif
 
   #if defined(DEBUG_SERIAL_USART2)
   uint8_t ptr_debug[SERIAL_BUFFER_SIZE];
-  if (pos != old_pos) {                                                 // Check change in received data
-    if (pos > old_pos) {                                                // "Linear" buffer mode: check if current position is over previous one
-      usart_process_debug(&rx_buffer_L[old_pos], pos - old_pos);        // Process data
-    } else {                                                            // "Overflow" buffer mode
-      memcpy(&ptr_debug[0], &rx_buffer_L[old_pos], rx_buffer_L_len - old_pos);    // First copy data from the end of buffer
-      if (pos > 0) {                                                    // Check and continue with beginning of buffer
-        memcpy(&ptr_debug[rx_buffer_L_len - old_pos], &rx_buffer_L[0], pos);                              // Copy remaining data
+  if (pos != old_pos) {                                                 // 检查接收数据的变化
+    if (pos > old_pos) {                                                // "线性" 缓冲区模式：检查当前位置是否在前一个位置之后
+      usart_process_debug(&rx_buffer_L[old_pos], pos - old_pos);        // 处理数据
+    } else {                                                            // "溢出" 缓冲区模式
+      memcpy(&ptr_debug[0], &rx_buffer_L[old_pos], rx_buffer_L_len - old_pos);    // 首先从缓冲区末尾复制数据
+      if (pos > 0) {                                                    // 检查并继续从缓冲区开头复制
+        memcpy(&ptr_debug[rx_buffer_L_len - old_pos], &rx_buffer_L[0], pos);                              // 复制剩余数据
       }
-      usart_process_debug(ptr_debug, rx_buffer_L_len - old_pos + pos);        // Process data
+      usart_process_debug(ptr_debug, rx_buffer_L_len - old_pos + pos);        // 处理数据
     }
   }
   #endif // DEBUG_SERIAL_USART2
 
   #ifdef CONTROL_SERIAL_USART2
   uint8_t *ptr;	
-  if (pos != old_pos) {                                                 // Check change in received data
-    ptr = (uint8_t *)&commandL_raw;                                     // Initialize the pointer with command_raw address
-    if (pos > old_pos && (pos - old_pos) == commandL_len) {             // "Linear" buffer mode: check if current position is over previous one AND data length equals expected length
-      memcpy(ptr, &rx_buffer_L[old_pos], commandL_len);                 // Copy data. This is possible only if command_raw is contiguous! (meaning all the structure members have the same size)
-      usart_process_command(&commandL_raw, &commandL, 2);               // Process data
-    } else if ((rx_buffer_L_len - old_pos + pos) == commandL_len) {     // "Overflow" buffer mode: check if data length equals expected length
-      memcpy(ptr, &rx_buffer_L[old_pos], rx_buffer_L_len - old_pos);    // First copy data from the end of buffer
-      if (pos > 0) {                                                    // Check and continue with beginning of buffer
-        ptr += rx_buffer_L_len - old_pos;                               // Move to correct position in command_raw
-        memcpy(ptr, &rx_buffer_L[0], pos);                              // Copy remaining data
+  if (pos != old_pos) {                                                 // 检查接收数据的变化
+    ptr = (uint8_t *)&commandL_raw;                                     // 用 command_raw 地址初始化指针
+    if (pos > old_pos && (pos - old_pos) == commandL_len) {             // "线性" 缓冲区模式：检查当前位置是否在前一个位置之后且数据长度等于预期长度
+      memcpy(ptr, &rx_buffer_L[old_pos], commandL_len);                 // 复制数据。仅在 command_raw 连续时才可能！（即所有结构成员大小相同）
+      usart_process_command(&commandL_raw, &commandL, 2);               // 处理数据
+    } else if ((rx_buffer_L_len - old_pos + pos) == commandL_len) {     // "溢出" 缓冲区模式：检查数据长度是否等于预期长度
+      memcpy(ptr, &rx_buffer_L[old_pos], rx_buffer_L_len - old_pos);    // 首先从缓冲区末尾复制数据
+      if (pos > 0) {                                                    // 检查并继续从缓冲区开头复制
+        ptr += rx_buffer_L_len - old_pos;                               // 移动到 command_raw 中的正确位置
+        memcpy(ptr, &rx_buffer_L[0], pos);                              // 复制剩余数据
       }
-      usart_process_command(&commandL_raw, &commandL, 2);               // Process data
+      usart_process_command(&commandL_raw, &commandL, 2);               // 处理数据
     }
   }
   #endif // CONTROL_SERIAL_USART2
 
   #ifdef SIDEBOARD_SERIAL_USART2
   uint8_t *ptr;	
-  if (pos != old_pos) {                                                 // Check change in received data
-    ptr = (uint8_t *)&Sideboard_L_raw;                                  // Initialize the pointer with Sideboard_raw address
-    if (pos > old_pos && (pos - old_pos) == Sideboard_L_len) {          // "Linear" buffer mode: check if current position is over previous one AND data length equals expected length
-      memcpy(ptr, &rx_buffer_L[old_pos], Sideboard_L_len);              // Copy data. This is possible only if Sideboard_raw is contiguous! (meaning all the structure members have the same size)
-      usart_process_sideboard(&Sideboard_L_raw, &Sideboard_L, 2);       // Process data
-    } else if ((rx_buffer_L_len - old_pos + pos) == Sideboard_L_len) {  // "Overflow" buffer mode: check if data length equals expected length
-      memcpy(ptr, &rx_buffer_L[old_pos], rx_buffer_L_len - old_pos);    // First copy data from the end of buffer
-      if (pos > 0) {                                                    // Check and continue with beginning of buffer
-        ptr += rx_buffer_L_len - old_pos;                               // Move to correct position in Sideboard_raw
-        memcpy(ptr, &rx_buffer_L[0], pos);                              // Copy remaining data
+  if (pos != old_pos) {                                                 // 检查接收数据的变化
+    ptr = (uint8_t *)&Sideboard_L_raw;                                  // 用 Sideboard_raw 地址初始化指针
+    if (pos > old_pos && (pos - old_pos) == Sideboard_L_len) {          // "线性" 缓冲区模式：检查当前位置是否在前一个位置之后且数据长度等于预期长度
+      memcpy(ptr, &rx_buffer_L[old_pos], Sideboard_L_len);              // 复制数据。仅在 Sideboard_raw 连续时才可能！（即所有结构成员大小相同）
+      usart_process_sideboard(&Sideboard_L_raw, &Sideboard_L, 2);       // 处理数据
+    } else if ((rx_buffer_L_len - old_pos + pos) == Sideboard_L_len) {  // "溢出" 缓冲区模式：检查数据长度是否等于预期长度
+      memcpy(ptr, &rx_buffer_L[old_pos], rx_buffer_L_len - old_pos);    // 首先从缓冲区末尾复制数据
+      if (pos > 0) {                                                    // 检查并继续从缓冲区开头复制
+        ptr += rx_buffer_L_len - old_pos;                               // 移动到 Sideboard_raw 中的正确位置
+        memcpy(ptr, &rx_buffer_L[0], pos);                              // 复制剩余数据
       }
-      usart_process_sideboard(&Sideboard_L_raw, &Sideboard_L, 2);       // Process data
+      usart_process_sideboard(&Sideboard_L_raw, &Sideboard_L, 2);       // 处理数据
     }
   }
   #endif // SIDEBOARD_SERIAL_USART2
 
   #if defined(DEBUG_SERIAL_USART2) || defined(CONTROL_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART2)
-  old_pos = pos;                                                        // Update old position
-  if (old_pos == rx_buffer_L_len) {                                     // Check and manually update if we reached end of buffer
+  old_pos = pos;                                                        // 更新旧位置
+  if (old_pos == rx_buffer_L_len) {                                     // 检查是否到达缓冲区末尾并手动更新
     old_pos = 0;
   }
 	#endif
@@ -1353,79 +1349,79 @@ void usart2_rx_check(void)
 
 
 /*
- * Check for new data received on USART3 with DMA: refactored function from https://github.com/MaJerle/stm32-usart-uart-dma-rx-tx
- * - this function is called for every USART IDLE line detection, in the USART interrupt handler
+ * 检查 USART3 DMA 接收的新数据：来自 https://github.com/MaJerle/stm32-usart-uart-dma-rx-tx 的重构函数
+ * - 该函数在每次 USART 空闲线检测时，在 USART 中断处理程序中被调用
  */
 void usart3_rx_check(void)
 {
   #if defined(DEBUG_SERIAL_USART3) || defined(CONTROL_SERIAL_USART3) || defined(SIDEBOARD_SERIAL_USART3)
   static uint32_t old_pos;
   uint32_t pos;  
-  pos = rx_buffer_R_len - __HAL_DMA_GET_COUNTER(huart3.hdmarx);         // Calculate current position in buffer
+  pos = rx_buffer_R_len - __HAL_DMA_GET_COUNTER(huart3.hdmarx);         // 计算缓冲区中的当前位置
   #endif
 
   #if defined(DEBUG_SERIAL_USART3)
   uint8_t ptr_debug[SERIAL_BUFFER_SIZE];
 
-  if (pos != old_pos) {                                                 // Check change in received data
-    if (pos > old_pos) {                                                // "Linear" buffer mode: check if current position is over previous one
-      usart_process_debug(&rx_buffer_R[old_pos], pos - old_pos);        // Process data
-    } else {                                                            // "Overflow" buffer mode
-      memcpy(&ptr_debug[0], &rx_buffer_R[old_pos], rx_buffer_R_len - old_pos);    // First copy data from the end of buffer
-      if (pos > 0) {                                                    // Check and continue with beginning of buffer
-        memcpy(&ptr_debug[rx_buffer_R_len - old_pos], &rx_buffer_R[0], pos);                              // Copy remaining data
+  if (pos != old_pos) {                                                 // 检查接收数据的变化
+    if (pos > old_pos) {                                                // "线性" 缓冲区模式：检查当前位置是否在前一个位置之后
+      usart_process_debug(&rx_buffer_R[old_pos], pos - old_pos);        // 处理数据
+    } else {                                                            // "溢出" 缓冲区模式
+      memcpy(&ptr_debug[0], &rx_buffer_R[old_pos], rx_buffer_R_len - old_pos);    // 首先从缓冲区末尾复制数据
+      if (pos > 0) {                                                    // 检查并继续从缓冲区开头复制
+        memcpy(&ptr_debug[rx_buffer_R_len - old_pos], &rx_buffer_R[0], pos);                              // 复制剩余数据
       }
-      usart_process_debug(ptr_debug, rx_buffer_R_len - old_pos + pos);        // Process data
+      usart_process_debug(ptr_debug, rx_buffer_R_len - old_pos + pos);        // 处理数据
     }
   }
   #endif // DEBUG_SERIAL_USART3
 
   #ifdef CONTROL_SERIAL_USART3
   uint8_t *ptr;
-  if (pos != old_pos) {                                                 // Check change in received data
-    ptr = (uint8_t *)&commandR_raw;                                     // Initialize the pointer with command_raw address
-    if (pos > old_pos && (pos - old_pos) == commandR_len) {             // "Linear" buffer mode: check if current position is over previous one AND data length equals expected length
-      memcpy(ptr, &rx_buffer_R[old_pos], commandR_len);                 // Copy data. This is possible only if command_raw is contiguous! (meaning all the structure members have the same size)
-      usart_process_command(&commandR_raw, &commandR, 3);               // Process data
-    } else if ((rx_buffer_R_len - old_pos + pos) == commandR_len) {     // "Overflow" buffer mode: check if data length equals expected length
-      memcpy(ptr, &rx_buffer_R[old_pos], rx_buffer_R_len - old_pos);    // First copy data from the end of buffer
-      if (pos > 0) {                                                    // Check and continue with beginning of buffer
-        ptr += rx_buffer_R_len - old_pos;                               // Move to correct position in command_raw
-        memcpy(ptr, &rx_buffer_R[0], pos);                              // Copy remaining data
+  if (pos != old_pos) {                                                 // 检查接收数据的变化
+    ptr = (uint8_t *)&commandR_raw;                                     // 用 command_raw 地址初始化指针
+    if (pos > old_pos && (pos - old_pos) == commandR_len) {             // "线性" 缓冲区模式：检查当前位置是否在前一个位置之后且数据长度等于预期长度
+      memcpy(ptr, &rx_buffer_R[old_pos], commandR_len);                 // 复制数据。仅在 command_raw 连续时才可能！（即所有结构成员大小相同）
+      usart_process_command(&commandR_raw, &commandR, 3);               // 处理数据
+    } else if ((rx_buffer_R_len - old_pos + pos) == commandR_len) {     // "溢出" 缓冲区模式：检查数据长度是否等于预期长度
+      memcpy(ptr, &rx_buffer_R[old_pos], rx_buffer_R_len - old_pos);    // 首先从缓冲区末尾复制数据
+      if (pos > 0) {                                                    // 检查并继续从缓冲区开头复制
+        ptr += rx_buffer_R_len - old_pos;                               // 移动到 command_raw 中的正确位置
+        memcpy(ptr, &rx_buffer_R[0], pos);                              // 复制剩余数据
       }
-      usart_process_command(&commandR_raw, &commandR, 3);               // Process data
+      usart_process_command(&commandR_raw, &commandR, 3);               // 处理数据
     }
   }
   #endif // CONTROL_SERIAL_USART3
 
   #ifdef SIDEBOARD_SERIAL_USART3
   uint8_t *ptr;
-  if (pos != old_pos) {                                                 // Check change in received data
-    ptr = (uint8_t *)&Sideboard_R_raw;                                  // Initialize the pointer with Sideboard_raw address
-    if (pos > old_pos && (pos - old_pos) == Sideboard_R_len) {          // "Linear" buffer mode: check if current position is over previous one AND data length equals expected length
-      memcpy(ptr, &rx_buffer_R[old_pos], Sideboard_R_len);              // Copy data. This is possible only if Sideboard_raw is contiguous! (meaning all the structure members have the same size)
-      usart_process_sideboard(&Sideboard_R_raw, &Sideboard_R, 3);       // Process data
-    } else if ((rx_buffer_R_len - old_pos + pos) == Sideboard_R_len) {  // "Overflow" buffer mode: check if data length equals expected length
-      memcpy(ptr, &rx_buffer_R[old_pos], rx_buffer_R_len - old_pos);    // First copy data from the end of buffer
-      if (pos > 0) {                                                    // Check and continue with beginning of buffer
-        ptr += rx_buffer_R_len - old_pos;                               // Move to correct position in Sideboard_raw
-        memcpy(ptr, &rx_buffer_R[0], pos);                              // Copy remaining data
+  if (pos != old_pos) {                                                 // 检查接收数据的变化
+    ptr = (uint8_t *)&Sideboard_R_raw;                                  // 用 Sideboard_raw 地址初始化指针
+    if (pos > old_pos && (pos - old_pos) == Sideboard_R_len) {          // "线性" 缓冲区模式：检查当前位置是否在前一个位置之后且数据长度等于预期长度
+      memcpy(ptr, &rx_buffer_R[old_pos], Sideboard_R_len);              // 复制数据。仅在 Sideboard_raw 连续时才可能！（即所有结构成员大小相同）
+      usart_process_sideboard(&Sideboard_R_raw, &Sideboard_R, 3);       // 处理数据
+    } else if ((rx_buffer_R_len - old_pos + pos) == Sideboard_R_len) {  // "溢出" 缓冲区模式：检查数据长度是否等于预期长度
+      memcpy(ptr, &rx_buffer_R[old_pos], rx_buffer_R_len - old_pos);    // 首先从缓冲区末尾复制数据
+      if (pos > 0) {                                                    // 检查并继续从缓冲区开头复制
+        ptr += rx_buffer_R_len - old_pos;                               // 移动到 Sideboard_raw 中的正确位置
+        memcpy(ptr, &rx_buffer_R[0], pos);                              // 复制剩余数据
       }
-      usart_process_sideboard(&Sideboard_R_raw, &Sideboard_R, 3);       // Process data
+      usart_process_sideboard(&Sideboard_R_raw, &Sideboard_R, 3);       // 处理数据
     }
   }
   #endif // SIDEBOARD_SERIAL_USART3
 
   #if defined(DEBUG_SERIAL_USART3) || defined(CONTROL_SERIAL_USART3) || defined(SIDEBOARD_SERIAL_USART3)
-  old_pos = pos;                                                        // Update old position
-  if (old_pos == rx_buffer_R_len) {                                     // Check and manually update if we reached end of buffer
+  old_pos = pos;                                                        // 更新旧位置
+  if (old_pos == rx_buffer_R_len) {                                     // 检查是否到达缓冲区末尾并手动更新
     old_pos = 0;
   }
   #endif
 }
 
 /*
- * Process Rx debug user command input
+ * 处理接收到的调试用户命令输入
  */
 #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART3)
 void usart_process_debug(uint8_t *userCommand, uint32_t len)
@@ -1438,8 +1434,8 @@ void usart_process_debug(uint8_t *userCommand, uint32_t len)
 #endif // SERIAL_DEBUG
 
 /*
- * Process command Rx data
- * - if the command_in data is valid (correct START_FRAME and checksum) copy the command_in to command_out
+ * 处理命令接收数据
+ * - 如果 command_in 数据有效（正确的起始帧和校验和），则将 command_in 复制到 command_out
  */
 #if defined(CONTROL_SERIAL_USART2) || defined(CONTROL_SERIAL_USART3)
 void usart_process_command(SerialCommand *command_in, SerialCommand *command_out, uint8_t usart_idx)
@@ -1453,15 +1449,15 @@ void usart_process_command(SerialCommand *command_in, SerialCommand *command_out
       }
       if (ibus_chksum == (uint16_t)((command_in->checksumh << 8) + command_in->checksuml)) {
         *command_out = *command_in;
-        if (usart_idx == 2) {             // Sideboard USART2
+        if (usart_idx == 2) {             // 侧板 USART2
           #ifdef CONTROL_SERIAL_USART2
-          timeoutFlgSerial_L = 0;         // Clear timeout flag
-          timeoutCntSerial_L = 0;         // Reset timeout counter
+          timeoutFlgSerial_L = 0;         // 清除超时标志
+          timeoutCntSerial_L = 0;         // 重置超时计数器
           #endif
-        } else if (usart_idx == 3) {      // Sideboard USART3
+        } else if (usart_idx == 3) {      // 侧板 USART3
           #ifdef CONTROL_SERIAL_USART3
-          timeoutFlgSerial_R = 0;         // Clear timeout flag
-          timeoutCntSerial_R = 0;         // Reset timeout counter
+          timeoutFlgSerial_R = 0;         // 清除超时标志
+          timeoutCntSerial_R = 0;         // 重置超时计数器
           #endif
         }
       }
@@ -1472,15 +1468,15 @@ void usart_process_command(SerialCommand *command_in, SerialCommand *command_out
     checksum = (uint16_t)(command_in->start ^ command_in->steer ^ command_in->speed);
     if (command_in->checksum == checksum) {
       *command_out = *command_in;
-      if (usart_idx == 2) {             // Sideboard USART2
+      if (usart_idx == 2) {             // 侧板 USART2
         #ifdef CONTROL_SERIAL_USART2
-        timeoutFlgSerial_L = 0;         // Clear timeout flag
-        timeoutCntSerial_L = 0;         // Reset timeout counter
+        timeoutFlgSerial_L = 0;         // 清除超时标志
+        timeoutCntSerial_L = 0;         // 重置超时计数器
         #endif
-      } else if (usart_idx == 3) {      // Sideboard USART3
+      } else if (usart_idx == 3) {      // 侧板 USART3
         #ifdef CONTROL_SERIAL_USART3
-        timeoutFlgSerial_R = 0;         // Clear timeout flag
-        timeoutCntSerial_R = 0;         // Reset timeout counter
+        timeoutFlgSerial_R = 0;         // 清除超时标志
+        timeoutCntSerial_R = 0;         // 重置超时计数器
         #endif
       }
     }
@@ -1490,8 +1486,8 @@ void usart_process_command(SerialCommand *command_in, SerialCommand *command_out
 #endif
 
 /*
- * Process Sideboard Rx data
- * - if the Sideboard_in data is valid (correct START_FRAME and checksum) copy the Sideboard_in to Sideboard_out
+ * 处理侧板接收数据
+ * - 如果 Sideboard_in 数据有效（正确的起始帧和校验和），则将 Sideboard_in 复制到 Sideboard_out
  */
 #if defined(SIDEBOARD_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART3)
 void usart_process_sideboard(SerialSideboard *Sideboard_in, SerialSideboard *Sideboard_out, uint8_t usart_idx)
@@ -1501,15 +1497,15 @@ void usart_process_sideboard(SerialSideboard *Sideboard_in, SerialSideboard *Sid
     checksum = (uint16_t)(Sideboard_in->start ^ Sideboard_in->pitch ^ Sideboard_in->dPitch ^ Sideboard_in->cmd1 ^ Sideboard_in->cmd2 ^ Sideboard_in->sensors);
     if (Sideboard_in->checksum == checksum) {
       *Sideboard_out = *Sideboard_in;
-      if (usart_idx == 2) {             // Sideboard USART2
+      if (usart_idx == 2) {             // 侧板 USART2
         #ifdef SIDEBOARD_SERIAL_USART2
-        timeoutCntSerial_L  = 0;        // Reset timeout counter
-        timeoutFlgSerial_L = 0;         // Clear timeout flag
+        timeoutCntSerial_L  = 0;        // 重置超时计数器
+        timeoutFlgSerial_L = 0;         // 清除超时标志
         #endif
-      } else if (usart_idx == 3) {      // Sideboard USART3
+      } else if (usart_idx == 3) {      // 侧板 USART3
         #ifdef SIDEBOARD_SERIAL_USART3
-        timeoutCntSerial_R = 0;         // Reset timeout counter
-        timeoutFlgSerial_R = 0;         // Clear timeout flag
+        timeoutCntSerial_R = 0;         // 重置超时计数器
+        timeoutFlgSerial_R = 0;         // 清除超时标志
         #endif
       }
     }
@@ -1518,33 +1514,33 @@ void usart_process_sideboard(SerialSideboard *Sideboard_in, SerialSideboard *Sid
 #endif
 
 
-/* =========================== Sideboard Functions =========================== */
+/* =========================== 侧板函数 =========================== */
 
 /*
- * Sideboard LEDs Handling
- * This function manages the leds behavior connected to the sideboard
+ * 侧板 LED 处理
+ * 该函数管理连接到侧板的 LED 行为
  */
 void sideboardLeds(uint8_t *leds) {
   #if defined(SIDEBOARD_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART3)
-    // Enable flag: use LED4 (bottom Blue)
-    // enable == 1, turn on led
-    // enable == 0, blink led
+    // 使能标志：使用 LED4（底部蓝色）
+    // enable == 1，点亮 LED
+    // enable == 0，LED 闪烁
     if (enable) {
       *leds |= LED4_SET;
     } else if (!enable && (main_loop_counter % 20 == 0)) {
       *leds ^= LED4_SET;
     }
 
-    // Backward Drive: use LED5 (upper Blue)
-    // backwardDrive == 1, blink led
-    // backwardDrive == 0, turn off led
+    // 倒车：使用 LED5（上部蓝色）
+    // backwardDrive == 1，LED 闪烁
+    // backwardDrive == 0，关闭 LED
     if (backwardDrive && (main_loop_counter % 50 == 0)) {
       *leds ^= LED5_SET;
     }
 
-    // Brake: use LED5 (upper Blue)
-    // brakePressed == 1, turn on led
-    // brakePressed == 0, turn off led
+    // 刹车：使用 LED5（上部蓝色）
+    // brakePressed == 1，点亮 LED
+    // brakePressed == 0，关闭 LED
     #ifdef VARIANT_HOVERCAR
       if (brakePressed) {
         *leds |= LED5_SET;
@@ -1553,8 +1549,8 @@ void sideboardLeds(uint8_t *leds) {
       }
     #endif
 
-    // Battery Level Indicator: use LED1, LED2, LED3
-    if (main_loop_counter % BAT_BLINK_INTERVAL == 0) {              //  | RED (LED1) | YELLOW (LED3) | GREEN (LED2) |
+    // 电池电量指示：使用 LED1、LED2、LED3
+    if (main_loop_counter % BAT_BLINK_INTERVAL == 0) {              //  | 红色 (LED1) | 黄色 (LED3) | 绿色 (LED2) |
       if (batVoltage < BAT_DEAD) {                                  //  |     0      |       0       |      0       |
         *leds &= ~LED1_SET & ~LED3_SET & ~LED2_SET;
       } else if (batVoltage < BAT_LVL1) {                           //  |     B      |       0       |      0       |
@@ -1578,9 +1574,9 @@ void sideboardLeds(uint8_t *leds) {
       }
     }
 
-    // Error handling
-    // Critical error:  LED1 on (RED)     + high pitch beep (hadled in main)
-    // Soft error:      LED3 on (YELLOW)  + low  pitch beep (hadled in main)
+    // 错误处理
+    // 严重错误：LED1 亮（红色）+ 高音蜂鸣（在主程序中处理）
+    // 轻微错误：LED3 亮（黄色）+ 低音蜂鸣（在主程序中处理）
     if (rtY_Left.z_errCode || rtY_Right.z_errCode) {
       *leds |= LED1_SET;
       *leds &= ~LED3_SET & ~LED2_SET;
@@ -1593,13 +1589,13 @@ void sideboardLeds(uint8_t *leds) {
 }
 
 /*
- * Sideboard Sensor Handling
- * This function manages the sideboards photo sensors.
- * In non-hoverboard variants, the sensors are used as push buttons.
+ * 侧板传感器处理
+ * 该函数管理侧板的光电传感器。
+ * 在非平衡车变体中，传感器用作按键。
  */
 void sideboardSensors(uint8_t sensors) {
   #if !defined(VARIANT_HOVERBOARD) && (defined(SIDEBOARD_SERIAL_USART2) || defined(SIDEBOARD_SERIAL_USART3))
-    static uint8_t sensor1_index;                                 // holds the press index number for sensor1, when used as a button
+    static uint8_t sensor1_index;                                 // 当用作按钮时，保存 sensor1 的按下索引号
     static uint8_t sensor1_prev,  sensor2_prev;
     uint8_t sensor1_trig = 0, sensor2_trig = 0;
     #if defined(SIDEBOARD_SERIAL_USART2)
@@ -1610,40 +1606,40 @@ void sideboardSensors(uint8_t sensors) {
     uint16_t sideboardSns = Sideboard_R.sensors;
     #endif
 
-    if (inIdx == sideboardIdx) {                                  // Use Sideboard data
-      sensor1_index = 2 + ((sideboardSns & SWB_SET) >> 9);        // SWB on RC transmitter is used to change Control Type
-      if (sensor1_index == 2) {                                   // FOC control Type
-        sensor1_index = (sideboardSns & SWC_SET) >> 11;           // SWC on RC transmitter is used to change Control Mode
+    if (inIdx == sideboardIdx) {                                  // 使用侧板数据
+      sensor1_index = 2 + ((sideboardSns & SWB_SET) >> 9);        // RC 发射器上的 SWB 用于更改控制类型
+      if (sensor1_index == 2) {                                   // FOC 控制类型
+        sensor1_index = (sideboardSns & SWC_SET) >> 11;           // RC 发射器上的 SWC 用于更改控制模式
       }
-      sensor1_trig  = sensor1_index != sensor1_prev;              // rising or falling edge change detection
-      if (inIdx != inIdx_prev) {                                  // Force one update at Input idx change
+      sensor1_trig  = sensor1_index != sensor1_prev;              // 上升沿或下降沿变化检测
+      if (inIdx != inIdx_prev) {                                  // 在输入索引变化时强制更新一次
         sensor1_trig  = 1;
       }
       sensor1_prev  = sensor1_index;
-    } else {                                                      // Use Optical switches
-      sensor1_trig  = (sensors & SENSOR1_SET) && !sensor1_prev;   // rising edge detection
+    } else {                                                      // 使用光电开关
+      sensor1_trig  = (sensors & SENSOR1_SET) && !sensor1_prev;   // 上升沿检测
       sensor1_prev  =  sensors & SENSOR1_SET;
     }
 
-    // Control MODE and Control Type Handling
+    // 控制模式和控制类型处理
     if (sensor1_trig) {
       switch (sensor1_index) {
-        case 0:     // FOC VOLTAGE
+        case 0:     // FOC 电压模式
           rtP_Left.z_ctrlTypSel = rtP_Right.z_ctrlTypSel = FOC_CTRL;
           ctrlModReqRaw         = VLT_MODE;
           break;
-        case 1:     // FOC SPEED
+        case 1:     // FOC 速度模式
           rtP_Left.z_ctrlTypSel = rtP_Right.z_ctrlTypSel = FOC_CTRL;
           ctrlModReqRaw         = SPD_MODE;
           break;
-        case 2:     // FOC TORQUE
+        case 2:     // FOC 转矩模式
           rtP_Left.z_ctrlTypSel = rtP_Right.z_ctrlTypSel = FOC_CTRL;
           ctrlModReqRaw         = TRQ_MODE;
           break;
-        case 3:     // SINUSOIDAL
+        case 3:     // 正弦波模式
           rtP_Left.z_ctrlTypSel = rtP_Right.z_ctrlTypSel = SIN_CTRL;
           break;
-        case 4:     // COMMUTATION
+        case 4:     // 换向模式
           rtP_Left.z_ctrlTypSel = rtP_Right.z_ctrlTypSel = COM_CTRL;
           break;
       }
@@ -1651,35 +1647,35 @@ void sideboardSensors(uint8_t sensors) {
       if (++sensor1_index > 4) { sensor1_index = 0; }
     }
 
-                                                             // Field Weakening Activation/Deactivation
-      static uint8_t  sensor2_index = 1;                          // holds the press index number for sensor2, when used as a button
+                                                             // 弱磁激活/停用
+      static uint8_t  sensor2_index = 1;                          // 当用作按钮时，保存 sensor2 的按下索引号
 
-      // Override in case the Sideboard control is Active
-      if (inIdx == sideboardIdx) {                                // Use Sideboard data
-        sensor2_index = (sideboardSns & SWD_SET) >> 13;           // SWD on RC transmitter is used to Activate/Deactivate Field Weakening
-        sensor2_trig  = sensor2_index != sensor2_prev;            // rising or falling edge change detection
-        if (inIdx != inIdx_prev) {                                // Force one update at Input idx change
+      // 如果侧板控制处于活动状态，则覆盖
+      if (inIdx == sideboardIdx) {                                // 使用侧板数据
+        sensor2_index = (sideboardSns & SWD_SET) >> 13;           // RC 发射器上的 SWD 用于激活/停用弱磁
+        sensor2_trig  = sensor2_index != sensor2_prev;            // 上升沿或下降沿变化检测
+        if (inIdx != inIdx_prev) {                                // 在输入索引变化时强制更新一次
           sensor2_trig  = 1;
         }
         sensor2_prev  = sensor2_index;
       }else{
-        sensor2_trig  = (sensors & SENSOR2_SET) && !sensor2_prev;   // rising edge detection
+        sensor2_trig  = (sensors & SENSOR2_SET) && !sensor2_prev;   // 上升沿检测
         sensor2_prev  =  sensors & SENSOR2_SET;
       }
 
-      #ifdef CRUISE_CONTROL_SUPPORT                                 // Cruise Control Activation/Deactivation
+      #ifdef CRUISE_CONTROL_SUPPORT                                 // 巡航控制激活/停用
         if (sensor2_trig) {
           cruiseControl(sensor2_trig);
         }
       #else
         if (sensor2_trig) {
           switch (sensor2_index) {
-            case 0:     // FW Disabled
+            case 0:     // 弱磁禁用
               rtP_Left.b_fieldWeakEna  = 0; 
               rtP_Right.b_fieldWeakEna = 0;
               Input_Lim_Init();
               break;
-            case 1:     // FW Enabled
+            case 1:     // 弱磁启用
               rtP_Left.b_fieldWeakEna  = 1; 
               rtP_Right.b_fieldWeakEna = 1;
               Input_Lim_Init();
@@ -1694,11 +1690,11 @@ void sideboardSensors(uint8_t sensors) {
 
 
 
-/* =========================== Poweroff Functions =========================== */
+/* =========================== 关机函数 =========================== */
 
  /*
- * Save Configuration to Flash
- * This function makes sure data is not lost after power-off
+ * 将配置保存到 Flash
+ * 该函数确保断电后数据不会丢失
  */
 void saveConfig() {
   #ifdef VARIANT_TRANSPOTTER
@@ -1823,54 +1819,54 @@ void poweroffPressCheck(void) {
     }
   #else
     if (HAL_GPIO_ReadPin(BUTTON_PORT, BUTTON_PIN)) {
-      enable = 0;                                             // disable motors
-      while (HAL_GPIO_ReadPin(BUTTON_PORT, BUTTON_PIN)) {}    // wait until button is released
-      poweroff();                                             // release power-latch
+      enable = 0;                                             // 禁用电机
+      while (HAL_GPIO_ReadPin(BUTTON_PORT, BUTTON_PIN)) {}    // 等待按钮释放
+      poweroff();                                             // 释放电源锁存
     }
   #endif
 }
 
 
 
-/* =========================== Filtering Functions =========================== */
+/* =========================== 滤波函数 =========================== */
 
-  /* Low pass filter fixed-point 32 bits: fixdt(1,32,16)
-  * Max:  32767.99998474121
-  * Min: -32768
-  * Res:  1.52587890625e-05
+  /* 低通滤波器定点 32 位：fixdt(1,32,16)
+  * 最大值：32767.99998474121
+  * 最小值：-32768
+  * 分辨率：1.52587890625e-05
   * 
-  * Inputs:       u     = int16 or int32
-  * Outputs:      y     = fixdt(1,32,16)
-  * Parameters:   coef  = fixdt(0,16,16) = [0,65535U]
+  * 输入：u = int16 或 int32
+  * 输出：y = fixdt(1,32,16)
+  * 参数：coef = fixdt(0,16,16) = [0,65535U]
   * 
-  * Example: 
-  * If coef = 0.8 (in floating point), then coef = 0.8 * 2^16 = 52429 (in fixed-point)
+  * 示例：
+  * 如果 coef = 0.8（浮点数），则 coef = 0.8 * 2^16 = 52429（定点数）
   * filtLowPass16(u, 52429, &y);
-  * yint = (int16_t)(y >> 16); // the integer output is the fixed-point ouput shifted by 16 bits
+  * yint = (int16_t)(y >> 16); // 整数输出是定点输出右移 16 位后的结果
   */
 void filtLowPass32(int32_t u, uint16_t coef, int32_t *y) {
   int64_t tmp;  
   tmp = ((int64_t)((u << 4) - (*y >> 12)) * coef) >> 4;
-  tmp = CLAMP(tmp, -2147483648LL, 2147483647LL);  // Overflow protection: 2147483647LL = 2^31 - 1
+  tmp = CLAMP(tmp, -2147483648LL, 2147483647LL);  // 溢出保护：2147483647LL = 2^31 - 1
   *y = (int32_t)tmp + (*y);
 }
-  // Old filter
-  // Inputs:       u     = int16
-  // Outputs:      y     = fixdt(1,32,20)
-  // Parameters:   coef  = fixdt(0,16,16) = [0,65535U]
-  // yint = (int16_t)(y >> 20); // the integer output is the fixed-point ouput shifted by 20 bits
+  // 旧滤波器
+  // 输入：u = int16
+  // 输出：y = fixdt(1,32,20)
+  // 参数：coef = fixdt(0,16,16) = [0,65535U]
+  // yint = (int16_t)(y >> 20); // 整数输出是定点输出右移 20 位后的结果
   // void filtLowPass32(int16_t u, uint16_t coef, int32_t *y) {
   //   int32_t tmp;  
   //   tmp = (int16_t)(u << 4) - (*y >> 16);  
-  //   tmp = CLAMP(tmp, -32768, 32767);  // Overflow protection  
+  //   tmp = CLAMP(tmp, -32768, 32767);  // 溢出保护
   //   *y  = coef * tmp + (*y);
   // }
 
 
   /* rateLimiter16(int16_t u, int16_t rate, int16_t *y);
-  * Inputs:       u     = int16
-  * Outputs:      y     = fixdt(1,16,4)
-  * Parameters:   rate  = fixdt(1,16,4) = [0, 32767] Do NOT make rate negative (>32767)
+  * 输入：u = int16
+  * 输出：y = fixdt(1,16,4)
+  * 参数：rate = fixdt(1,16,4) = [0, 32767] 不要将 rate 设为负值 (>32767)
   */
 void rateLimiter16(int16_t u, int16_t rate, int16_t *y) {
   int16_t q0;
@@ -1892,9 +1888,9 @@ void rateLimiter16(int16_t u, int16_t rate, int16_t *y) {
 
 
   /* mixerFcn(rtu_speed, rtu_steer, &rty_speedR, &rty_speedL); 
-  * Inputs:       rtu_speed, rtu_steer                  = fixdt(1,16,4)
-  * Outputs:      rty_speedR, rty_speedL                = int16_t
-  * Parameters:   SPEED_COEFFICIENT, STEER_COEFFICIENT  = fixdt(0,16,14)
+  * 输入：rtu_speed, rtu_steer = fixdt(1,16,4)
+  * 输出：rty_speedR, rty_speedL = int16_t
+  * 参数：SPEED_COEFFICIENT, STEER_COEFFICIENT = fixdt(0,16,14)
   */
 void mixerFcn(int16_t rtu_speed, int16_t rtu_steer, int16_t *rty_speedR, int16_t *rty_speedL) {
     int16_t prodSpeed;
@@ -1905,24 +1901,24 @@ void mixerFcn(int16_t rtu_speed, int16_t rtu_steer, int16_t *rty_speedR, int16_t
     prodSteer   = (int16_t)((rtu_steer * (int16_t)STEER_COEFFICIENT) >> 14);
 
     tmp         = prodSpeed - prodSteer;  
-    tmp         = CLAMP(tmp, -32768, 32767);  // Overflow protection
-    *rty_speedR = (int16_t)(tmp >> 4);        // Convert from fixed-point to int 
+    tmp         = CLAMP(tmp, -32768, 32767);  // 溢出保护
+    *rty_speedR = (int16_t)(tmp >> 4);        // 从定点数转换为整数
     *rty_speedR = CLAMP(*rty_speedR, INPUT_MIN, INPUT_MAX);
 
     tmp         = prodSpeed + prodSteer;
-    tmp         = CLAMP(tmp, -32768, 32767);  // Overflow protection
-    *rty_speedL = (int16_t)(tmp >> 4);        // Convert from fixed-point to int
+    tmp         = CLAMP(tmp, -32768, 32767);  // 溢出保护
+    *rty_speedL = (int16_t)(tmp >> 4);        // 从定点数转换为整数
     *rty_speedL = CLAMP(*rty_speedL, INPUT_MIN, INPUT_MAX);
 }
 
 
 
-/* =========================== Multiple Tap Function =========================== */
+/* =========================== 多次点击检测函数 =========================== */
 
   /* multipleTapDet(int16_t u, uint32_t timeNow, MultipleTap *x)
-  * This function detects multiple tap presses, such as double tapping, triple tapping, etc.
-  * Inputs:       u = int16_t (input signal); timeNow = uint32_t (current time)  
-  * Outputs:      x->b_multipleTap (get the output here)
+  * 该函数检测多次点击按下，例如双击、三击等。
+  * 输入：u = int16_t（输入信号）；timeNow = uint32_t（当前时间）
+  * 输出：x->b_multipleTap（在此获取输出）
   */
 void multipleTapDet(int16_t u, uint32_t timeNow, MultipleTap *x) {
   uint8_t 	b_timeout;
@@ -1932,34 +1928,34 @@ void multipleTapDet(int16_t u, uint32_t timeNow, MultipleTap *x) {
   uint8_t   z_pulseCntRst;
   uint32_t 	t_time; 
 
-  // Detect hysteresis
+  // 检测迟滞
   if (x->b_hysteresis) {
     b_hyst = (u > MULTIPLE_TAP_LO);
   } else {
     b_hyst = (u > MULTIPLE_TAP_HI);
   }
 
-  // Detect pulse
+  // 检测脉冲
   b_pulse = (b_hyst != x->b_hysteresis);
 
-  // Save time when first pulse is detected
+  // 记录首次检测到脉冲的时间
   if (b_hyst && b_pulse && (x->z_pulseCntPrev == 0)) {
     t_time = timeNow;
   } else {
     t_time = x->t_timePrev;
   }
 
-  // Create timeout boolean
+  // 创建超时布尔量
   b_timeout = (timeNow - t_time > MULTIPLE_TAP_TIMEOUT);
 
-  // Create pulse counter
+  // 创建脉冲计数器
   if ((!b_hyst) && (x->z_pulseCntPrev == 0)) {
     z_pulseCnt = 0U;
   } else {
     z_pulseCnt = b_pulse;
   }
 
-  // Reset counter if we detected complete tap presses OR there is a timeout
+  // 如果检测到完整的点击按下或发生超时，则重置计数器
   if ((x->z_pulseCntPrev >= MULTIPLE_TAP_NR) || b_timeout) {
     z_pulseCntRst = 0U;
   } else {
@@ -1967,12 +1963,12 @@ void multipleTapDet(int16_t u, uint32_t timeNow, MultipleTap *x) {
   }
   z_pulseCnt = z_pulseCnt + z_pulseCntRst;
 
-  // Check if complete tap presses are detected AND no timeout
+  // 检查是否检测到完整的点击按下且未超时
   if ((z_pulseCnt >= MULTIPLE_TAP_NR) && (!b_timeout)) {
-    x->b_multipleTap = !x->b_multipleTap;	// Toggle output
+    x->b_multipleTap = !x->b_multipleTap;	// 切换输出
   }
 
-  // Update states
+  // 更新状态
   x->z_pulseCntPrev = z_pulseCnt;
   x->b_hysteresis 	= b_hyst;
   x->t_timePrev 	  = t_time;
